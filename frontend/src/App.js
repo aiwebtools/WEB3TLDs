@@ -1,13 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Lenis from "@studio-freight/lenis";
+import { Toaster } from "./components/ui/sonner";
 import { Nav } from "./components/Nav";
 import { Hero } from "./components/Hero";
 import { Marquee } from "./components/Marquee";
+import { FilterBar } from "./components/FilterBar";
 import { CategorySection } from "./components/CategorySection";
 import { Footer } from "./components/Footer";
+import { LeadFormModal } from "./components/LeadFormModal";
 import { CATEGORIES } from "./data/domains";
 
+const countMatches = (filter) =>
+  CATEGORIES.reduce(
+    (sum, c) =>
+      sum + c.domains.filter((d) => filter === "All" || (d.chain || c.chain) === filter).length,
+    0
+  );
+
 function App() {
+  const [chainFilter, setChainFilter] = useState("All");
+  const [offerOpen, setOfferOpen] = useState(false);
+
   useEffect(() => {
     const lenis = new Lenis({ duration: 1.2, smoothWheel: true });
     const raf = (time) => {
@@ -39,11 +52,31 @@ function App() {
       <main>
         <Hero />
         <Marquee />
+        <FilterBar
+          chainFilter={chainFilter}
+          setChainFilter={setChainFilter}
+          matchCount={countMatches(chainFilter)}
+          onOffer={() => setOfferOpen(true)}
+        />
         {CATEGORIES.map((category) => (
-          <CategorySection key={category.id} category={category} />
+          <CategorySection key={category.id} category={category} chainFilter={chainFilter} />
         ))}
       </main>
-      <Footer />
+      <Footer onOffer={() => setOfferOpen(true)} />
+      <LeadFormModal open={offerOpen} onClose={() => setOfferOpen(false)} />
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: "#0A0A0A",
+            border: "1px solid rgba(204,255,0,0.3)",
+            color: "#fff",
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: "12px",
+          },
+        }}
+      />
     </div>
   );
 }

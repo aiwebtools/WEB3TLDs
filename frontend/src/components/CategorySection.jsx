@@ -1,12 +1,22 @@
 import { motion } from "framer-motion";
 import { DomainCard } from "./DomainCard";
 
-export const CategorySection = ({ category }) => {
-  const cols = category.domains.length >= 5
-    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
-    : category.domains.length === 4
-      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
-      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
+export const CategorySection = ({ category, chainFilter }) => {
+  const visible =
+    chainFilter === "All"
+      ? category.domains
+      : category.domains.filter((d) => (d.chain || category.chain) === chainFilter);
+
+  if (!visible.length) return null;
+
+  const cols =
+    visible.length >= 5
+      ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+      : visible.length === 4
+        ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
+        : visible.length === 3
+          ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 md:grid-cols-2";
 
   return (
     <section
@@ -41,7 +51,7 @@ export const CategorySection = ({ category }) => {
         </motion.div>
 
         <div className={`grid ${cols} gap-6`}>
-          {category.domains.map((domain, i) => (
+          {visible.map((domain, i) => (
             <DomainCard key={domain.slug} domain={domain} index={i} defaultChain={category.chain} />
           ))}
         </div>

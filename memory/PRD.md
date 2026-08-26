@@ -29,13 +29,17 @@ An app that sells 15 Web3 TLD domains (across Money Transfer, AI & Technology, R
 - Footer with final-call CTA and massive outline brand text
 - Noise/grain overlay, hero grid glow, acid-green accent system
 - All 15 buy links verified to correct Freename URLs (HTTP 200)
+- Live pricing scraped from each Freename discover page — "From $X.XX" shown per card (2026-08-26)
+- Chain filter bar (All / Polygon / Solana), sticky, with live match count
+- Copy referral link button per card (clipboard + toast)
+- Bulk offer lead form (modal) → POST /api/leads stored in MongoDB; GET /api/leads for retrieval
 
 ## Backlog
 - P0: none blocking
-- P1: Search/filter by chain or category; contact/lead capture form for bulk buyers
-- P2: Price display per domain (manual data), bundle deals section, live availability check via Freename API, share/referral copy button per domain
+- P1: Email notification to owner when a lead arrives (Resend); admin view of leads
+- P2: Auto-refresh pricing from Freename, bundle deals section, live availability check via Freename API
 
 ## Next Tasks
-1. Add lead capture form for bulk/portfolio offers
-2. Add chain + category filters above the grid
-3. Add per-domain pricing once confirmed
+1. Wire lead notifications to owner email (Resend integration)
+2. Build a simple /admin leads viewer (protected)
+3. Refresh pricing periodically or on demand

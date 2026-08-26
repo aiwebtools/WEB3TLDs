@@ -66,6 +66,40 @@ async def get_status_checks():
     
     return status_checks
 
+class LeadCreate(BaseModel):
+    name: str
+    email: str
+    offer: str = ""
+    domains: List[str] = []
+    message: str = ""
+
+class Lead(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    email: str
+    offer: str = ""
+    domains: List[str] = []
+    message: str = ""
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+@api_router.post("/leads", response_model=Lead)
+async def create_lead(input: LeadCreate):
+    lead = Lead(**input.model_dump())
+    doc = lead.model_dump()
+    doc['timestamp'] = doc['timestamp'].isoformat()
+    await db.leads.insert_one(doc)
+    return lead
+
+@api_router.get("/leads", response_model=List[Lead])
+async def get_leads():
+    leads = await db.leads.find({}, {"_id": 0}).to_list(1000)
+    for lead in leads:
+        if isinstance(lead['timestamp'], str):
+            lead['timestamp'] = datetime.fromisoformat(lead['timestamp'])
+    return leads
+
 # Include the router in the main app
 app.include_router(api_router)
 

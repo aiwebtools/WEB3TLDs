@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowUpRight, Hexagon } from "lucide-react";
 import { CATEGORIES, buyUrl } from "../data/domains";
 
-export const Footer = () => {
+export const Footer = ({ onOffer }) => {
   return (
     <footer className="relative overflow-hidden" data-testid="site-footer">
       <div className="absolute bottom-0 left-1/3 w-[500px] h-[300px] rounded-full bg-[#CCFF00]/[0.05] blur-[140px] pointer-events-none" />
@@ -21,16 +21,25 @@ export const Footer = () => {
             <br />
             Hesitation is <span className="text-outline">forever.</span>
           </h2>
-          <a
-            href={buyUrl(CATEGORIES[0].domains[0].slug)}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="footer-cta-button"
-            className="btn-acid mt-12 inline-flex items-center gap-3 bg-[#CCFF00] text-[#050505] font-mono2 text-sm tracking-[0.15em] uppercase px-8 py-4"
-          >
-            Start with .transfermoney
-            <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
-          </a>
+          <div className="mt-12 flex flex-wrap items-center gap-4">
+            <a
+              href={buyUrl(CATEGORIES[0].domains[0].slug)}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="footer-cta-button"
+              className="btn-acid inline-flex items-center gap-3 bg-[#CCFF00] text-[#050505] font-mono2 text-sm tracking-[0.15em] uppercase px-8 py-4"
+            >
+              Start with .transfermoney
+              <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
+            </a>
+            <button
+              onClick={onOffer}
+              data-testid="footer-offer-button"
+              className="inline-flex items-center gap-3 border border-white/20 text-white/70 hover:text-[#CCFF00] hover:border-[#CCFF00]/50 font-mono2 text-sm tracking-[0.15em] uppercase px-8 py-4 transition-colors"
+            >
+              Make a Bulk Offer
+            </button>
+          </div>
         </motion.div>
 
         <div className="mt-24 md:mt-32">

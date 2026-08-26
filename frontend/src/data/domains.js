@@ -124,3 +124,21 @@ export const CATEGORIES = [
 ];
 
 export const buyUrl = (slug) => `${BASE}${slug}${REF}`;
+
+export const FROM_PRICES = {
+  transfermoney: 9.98,
+  transfercoin: 9.98,
+  cointransfer: 9.98,
+  transfercash: 9.98,
+  cashtransfer: 9.98,
+  "ai-tools": 4.99,
+  aiwebtools: 4.99,
+  aimainframe: 7.49,
+  aitoolscompany: 7.49,
+  robotsales: 9.98,
+  robotshop: 9.98,
+  robotstore: 9.98,
+  worldpeace: 4.99,
+  worldtrade: 9.98,
+  worldtrader: 7.49,
+};
