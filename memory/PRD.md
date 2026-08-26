@@ -39,13 +39,16 @@ An app that sells 15 Web3 TLD domains (across Money Transfer, AI & Technology, R
 - Per-card: custom artwork (8 AI-generated via Gemini Nano Banana, 7 curated stock pending LLM budget top-up), example names (mike.cashtransfer style), 3 plain-English utilities, MINTED ON POLYGON/SOLANA badges
 - Whole card clickable → purchase URL; card name hover accent; shine + lift effects on all buttons
 - Nav branding upgrade: live pulse pill, Browse Names + Freename CTAs; animated hero (panning grid, 3 drifting glow orbs)
+- "Type your name" claim section: live Freename price-check API (/api/name-preview) across all 15 endings, personalized greeting, gradient glow input, staggered result cards linking to exact buy URLs (2026-08-26)
+- Social share row per card (X / Telegram / WhatsApp intent links with prefilled promo text) + copy referral button (2026-08-26)
+- 3D tilt on domain cards (spring physics), aurora background layer (acid + cyan drifting glows), gradient price text, OG/Twitter meta tags for premium link previews (2026-08-26)
 
 ## Backlog
 - P0: Regenerate 7 remaining custom card images once user tops up Universal Key (Profile → Manage plan → Universal Key → Add Balance): ai-tools, aimainframe, aitoolscompany, robotsales, robotstore, worldpeace, worldtrade
 - P1: Email notification to owner when a lead arrives (Resend); admin view of leads
-- P2: Bundle deals section, live availability check, per-domain OG share cards
+- P2: Bundle deals section, per-domain OG images, availability webhook
 
 ## Next Tasks
 1. Regenerate remaining 7 custom images after budget top-up
 2. Wire lead notifications to owner email (Resend integration)
-3. Build a simple /admin leads viewer (protected)
+3. Per-domain dynamic OG images for richer social shares

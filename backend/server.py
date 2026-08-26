@@ -167,6 +167,45 @@ async def get_prices():
     doc = await db.tld_prices.find_one({"_id": "current"}, {"_id": 0})
     return doc or {"prices": {}, "updated_at": None}
 
+@api_router.get("/name-preview")
+async def name_preview(name: str):
+    clean = "".join(c for c in name.lower() if c.isalnum() or c == "-").strip("-")[:30]
+    if not clean:
+        return {"name": "", "results": []}
+
+    async def check(slug):
+        fqdn = f"{clean}.{slug}"
+        found = {}
+        try:
+            async with httpx.AsyncClient(timeout=20) as http:
+                r = await http.get(f"https://v2-api.freename.com/api/v2/reseller/search/{slug}?searchString={clean}")
+                result = r.json().get("data", {}).get("result", {})
+
+            def walk(node):
+                if isinstance(node, dict):
+                    if node.get("name") == fqdn:
+                        found["price"] = (node.get("price") or {}).get("amount")
+                        found["status"] = node.get("availabilityStatus")
+                    for v in node.values():
+                        walk(v)
+                elif isinstance(node, list):
+                    for item in node:
+                        walk(item)
+
+            walk(result)
+        except Exception as e:
+            logger.warning(f"name preview failed for {fqdn}: {e}")
+        return {
+            "slug": slug,
+            "fqdn": fqdn,
+            "price": found.get("price"),
+            "status": found.get("status", "UNKNOWN"),
+            "buyUrl": f"https://freename.io/results?search=%22{fqdn}%22&ref=olive-ears-obey",
+        }
+
+    results = await asyncio.gather(*[check(slug) for slug in TLD_SLUGS])
+    return {"name": clean, "results": list(results)}
+
 # Include the router in the main app
 app.include_router(api_router)
 

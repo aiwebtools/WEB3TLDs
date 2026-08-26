@@ -1,5 +1,5 @@
-import { motion } from "framer-motion";
-import { ArrowUpRight, BadgeCheck, Copy, Globe, PlugZap, Send, Store, Tag, Wallet } from "lucide-react";
+import { motion, useMotionValue, useSpring } from "framer-motion";
+import { ArrowUpRight, BadgeCheck, Copy, Globe, MessageCircle, PlugZap, Send, Share2, Store, Tag, Twitter, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { buyUrl, EXAMPLES, FROM_PRICES, UTILITIES } from "../data/domains";
 
@@ -28,6 +28,21 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
   const examples = EXAMPLES[domain.slug] || [];
   const utilities = UTILITIES[domain.slug] || [];
 
+  const tiltX = useMotionValue(0);
+  const tiltY = useMotionValue(0);
+  const rotateX = useSpring(tiltX, { stiffness: 200, damping: 20 });
+  const rotateY = useSpring(tiltY, { stiffness: 200, damping: 20 });
+
+  const onTilt = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    tiltY.set(((e.clientX - r.left) / r.width - 0.5) * 7);
+    tiltX.set(-((e.clientY - r.top) / r.height - 0.5) * 7);
+  };
+  const resetTilt = () => {
+    tiltX.set(0);
+    tiltY.set(0);
+  };
+
   const openBuy = () => window.open(url, "_blank", "noopener,noreferrer");
 
   const copyLink = async (e) => {
@@ -40,6 +55,16 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
     }
   };
 
+  const shareText = encodeURIComponent(
+    `Claim your Web3 name on ${domain.name} — minted on ${chain}. Pay once, own it forever.`
+  );
+  const shareUrl = encodeURIComponent(url);
+  const shareLinks = [
+    { id: "x", icon: Twitter, href: `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`, hover: "hover:text-cyan-300 hover:border-cyan-300/50" },
+    { id: "telegram", icon: Share2, href: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`, hover: "hover:text-sky-400 hover:border-sky-400/50" },
+    { id: "whatsapp", icon: MessageCircle, href: `https://wa.me/?text=${shareText}%20${shareUrl}`, hover: "hover:text-emerald-300 hover:border-emerald-300/50" },
+  ];
+
   return (
     <motion.article
       layout
@@ -47,6 +72,9 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.7, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
+      style={{ rotateX, rotateY, transformPerspective: 900 }}
+      onMouseMove={onTilt}
+      onMouseLeave={resetTilt}
       data-testid={`domain-card-${domain.slug}`}
       onClick={openBuy}
       onKeyDown={(e) => e.key === "Enter" && openBuy()}
@@ -89,7 +117,7 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
         {price && (
           <div className="mt-3 flex items-baseline gap-2" data-testid={`domain-price-${domain.slug}`}>
             <span className="font-mono2 text-[10px] tracking-[0.2em] uppercase text-white/35">From</span>
-            <span className="font-mono2 text-lg font-medium text-[#CCFF00]">${price.toFixed(2)}</span>
+            <span className="font-mono2 text-lg font-medium text-transparent bg-clip-text bg-gradient-to-r from-[#CCFF00] to-cyan-300">${price.toFixed(2)}</span>
             <span className="font-mono2 text-[10px] tracking-[0.15em] uppercase text-white/35">— once, forever · tap card to buy</span>
           </div>
         )}
@@ -119,12 +147,28 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
           })}
         </ul>
 
-        <div className="mt-6 flex items-center justify-end gap-2">
+        <div className="mt-6 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5" data-testid={`share-row-${domain.slug}`}>
+            {shareLinks.map(({ id, icon: Icon, href, hover }) => (
+              <a
+                key={id}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                data-testid={`share-${id}-${domain.slug}`}
+                aria-label={`Share ${domain.name} on ${id}`}
+                className={`p-2 border border-white/10 text-white/35 transition-colors ${hover}`}
+              >
+                <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </a>
+            ))}
+          </div>
           <button
             onClick={copyLink}
             data-testid={`copy-button-${domain.slug}`}
             aria-label={`Copy referral link for ${domain.name}`}
-            className="p-2.5 border border-white/15 text-white/50 hover:text-[#CCFF00] hover:border-[#CCFF00]/50 transition-colors"
+            className="p-2.5 border border-white/15 text-white/50 hover:text-fuchsia-400 hover:border-fuchsia-400/50 transition-colors"
           >
             <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
           </button>

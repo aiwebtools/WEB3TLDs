@@ -5,6 +5,7 @@ import { Nav } from "./components/Nav";
 import { Hero } from "./components/Hero";
 import { Marquee } from "./components/Marquee";
 import { HowItWorks } from "./components/HowItWorks";
+import { ClaimYourName } from "./components/ClaimYourName";
 import { FilterBar } from "./components/FilterBar";
 import { CategorySection } from "./components/CategorySection";
 import { Footer } from "./components/Footer";
@@ -55,11 +56,13 @@ function App() {
   return (
     <div className="bg-[#050505] text-white min-h-screen" data-testid="app-root">
       <div className="noise-overlay" />
+      <div className="aurora-bg" />
       <Nav />
-      <main>
+      <main className="relative z-10">
         <Hero />
         <Marquee />
         <HowItWorks />
+        <ClaimYourName />
         <FilterBar
           chainFilter={chainFilter}
           setChainFilter={setChainFilter}

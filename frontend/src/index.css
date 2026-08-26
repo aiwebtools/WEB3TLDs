@@ -184,6 +184,76 @@
   animation: orb-drift-3 26s ease-in-out infinite;
 }
 
+@keyframes aurora-a {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(25vw, 15vh) scale(1.2);
+  }
+}
+@keyframes aurora-b {
+  from {
+    transform: translate(0, 0) scale(1.1);
+  }
+  to {
+    transform: translate(-20vw, -12vh) scale(0.95);
+  }
+}
+
+.aurora-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.aurora-bg::before,
+.aurora-bg::after {
+  content: "";
+  position: absolute;
+  width: 55vw;
+  height: 55vw;
+  border-radius: 9999px;
+}
+.aurora-bg::before {
+  top: -15%;
+  left: -10%;
+  background: radial-gradient(circle, rgba(204, 255, 0, 0.045), transparent 60%);
+  animation: aurora-a 38s ease-in-out infinite alternate;
+}
+.aurora-bg::after {
+  bottom: -20%;
+  right: -10%;
+  background: radial-gradient(circle, rgba(34, 211, 238, 0.04), transparent 60%);
+  animation: aurora-b 46s ease-in-out infinite alternate;
+}
+
+@keyframes hue-drift {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  50% {
+    filter: hue-rotate(70deg);
+  }
+  100% {
+    filter: hue-rotate(0deg);
+  }
+}
+
+.claim-glow {
+  position: relative;
+}
+.claim-glow::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(100deg, #ccff00, #22d3ee, #f471b5, #ccff00);
+  z-index: -1;
+  animation: hue-drift 8s linear infinite;
+  opacity: 0.7;
+}
+
 @keyframes spin-slow {
   from {
     transform: rotate(0deg);

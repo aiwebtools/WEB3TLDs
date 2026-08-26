@@ -4,7 +4,7 @@ import { CATEGORIES, buyUrl } from "../data/domains";
 
 export const Footer = () => {
   return (
-    <footer className="relative overflow-hidden" data-testid="site-footer">
+    <footer className="relative z-10 overflow-hidden" data-testid="site-footer">
       <div className="absolute bottom-0 left-1/3 w-[500px] h-[300px] rounded-full bg-[#CCFF00]/[0.05] blur-[140px] pointer-events-none" />
       <div className="max-w-[1600px] mx-auto px-6 md:px-12 pt-24 md:pt-32 pb-10">
         <motion.div
