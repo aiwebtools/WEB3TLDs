@@ -10,16 +10,19 @@ Showcase/sell 15 premium Web3 TLDs (.transfermoney, .transfercoin, .cointransfer
 - Media: `/app/frontend/public/images/domains/*.png` (15 AI-generated card images), `/app/frontend/public/videos/hero-stock.mp4` (hero bg loop)
 
 ## Implemented (this session, 2026-08-26)
+- Share Image Cards: 15 branded 1200x630 OG cards auto-generated with Pillow (`/app/backend/scripts/og_images.py` -> `/app/frontend/public/og/{slug}.png`), regenerated every 30 min with live prices; `GET /api/share/{slug}` serves OG/Twitter meta (absolute image URLs via x-forwarded-host) and redirects humans to Freename purchase; DomainCard share/copy buttons now share the branded page URL
+- Purchase celebration: confetti burst (canvas-confetti, acid-green palette) + WebAudio "bing" chime, then the Freename tab opens ~650ms later (about:blank trick = popup-blocker safe) on domain cards, buy buttons, search result cards and example rows
+- Search glitch fix: 2-char minimum, 600ms debounce, previous results stay dimmed until new stream data arrives — no flicker/reset while typing
 - Hero background video loop (stock clip self-hosted; Sora 2 AI clip BLOCKED — Universal Key budget insufficient)
 - aiwebtools.app branding: nav logo, "Free AI Tools" chip (desktop+mobile menu), footer wordmark + presented-by, .aiwebtools card example chips + "Live proof" link — all open aiwebtools.app in new tab
 - All external links open in NEW tab (target=_blank + noopener); Freename URLs carry ref=olive-ears-obey, quote-mark (%22) bug fixed
-- Live name search rebuilt: NDJSON streaming `/api/name-preview-stream` (first price ~6s, 15/15 in ~20s fresh, instant cached 10-min TTL), retry + semaphore(4) + 40s hang guard; "· · ·" placeholder instead of stale seed prices
+- Live name search: NDJSON streaming `/api/name-preview-stream` (first price ~6s, 15/15 in ~20s fresh, instant cached 10-min TTL), retry + semaphore(4) + 40s hang guard; "· · ·" placeholder instead of stale seed prices
 - Clickable TLD filter chips ABOVE the search bar (tiny on desktop, 40px tap targets on mobile)
 - Default view: 8 curated premium example names per TLD with real live prices (per-TLD keyword sets, e.g. oil.worldtrade $4,999); sold names show struck-through "No longer available"; refreshed every 30 min
 - "Make Your Own TLD" buttons (nav desktop, mobile menu, hero, footer) → https://freename.com/home?ref=olive-ears-obey
 - Mobile optimization: hamburger nav, 360px horizontal overflow fixed (html overflow-x), footer wordmark scales, chips tap-friendly
 - Domain card action row: share/copy icons row + full-width Buy button (overflow fixed)
-- Testing: /app/test_reports/iteration_1.json, iteration_2.json; backend pytest suite /app/backend/tests/backend_test.py (14/14 pass)
+- Testing: /app/test_reports/iteration_1-3.json; backend pytest /app/backend/tests/backend_test.py (18/18 pass, incl. TestSharePages)
 - Deployment readiness: PASS (deployment_agent, 2026-08-26). User presses Deploy in dashboard.
 
 ## Backlog

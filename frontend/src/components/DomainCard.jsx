@@ -2,6 +2,7 @@ import { motion, useMotionValue, useSpring } from "framer-motion";
 import { ArrowUpRight, BadgeCheck, Copy, Globe, MessageCircle, PlugZap, Send, Share2, Store, Tag, Twitter, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { buyUrl, EXAMPLES, FROM_PRICES, UTILITIES } from "../data/domains";
+import { celebrateAndOpen } from "../utils/celebrate";
 
 const ICONS = { send: Send, wallet: Wallet, globe: Globe, plug: PlugZap, store: Store, tag: Tag };
 
@@ -43,13 +44,15 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
     tiltY.set(0);
   };
 
-  const openBuy = () => window.open(url, "_blank", "noopener,noreferrer");
+  const openBuy = (e) => celebrateAndOpen(url, e);
+
+  const sharePage = `${window.location.origin}/api/share/${domain.slug}`;
 
   const copyLink = async (e) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(url);
-      toast.success("Referral link copied", { description: url });
+      await navigator.clipboard.writeText(sharePage);
+      toast.success("Share link copied", { description: sharePage });
     } catch {
       toast.error("Copy failed — clipboard unavailable");
     }
@@ -58,7 +61,7 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
   const shareText = encodeURIComponent(
     `Claim your Web3 name on ${domain.name} — minted on ${chain}. Pay once, own it forever.`
   );
-  const shareUrl = encodeURIComponent(url);
+  const shareUrl = encodeURIComponent(sharePage);
   const shareLinks = [
     { id: "x", icon: Twitter, href: `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`, hover: "hover:text-cyan-300 hover:border-cyan-300/50" },
     { id: "telegram", icon: Share2, href: `https://t.me/share/url?url=${shareUrl}&text=${shareText}`, hover: "hover:text-sky-400 hover:border-sky-400/50" },
@@ -204,7 +207,11 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              celebrateAndOpen(url, e);
+            }}
             data-testid={`buy-button-${domain.slug}`}
             className="btn-acid w-full inline-flex items-center justify-center gap-2 bg-[#CCFF00] text-[#050505] font-mono2 text-[11px] tracking-[0.15em] uppercase px-4 py-3 whitespace-nowrap"
           >

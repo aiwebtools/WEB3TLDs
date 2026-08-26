@@ -187,3 +187,37 @@ class TestLeadsAndStatus:
         listed = api.get(f"{BASE_URL}/api/status", timeout=30)
         assert listed.status_code == 200
         assert any(s["id"] == sid for s in listed.json())
+
+
+
+# --- /api/share/{slug} : branded OG share pages + /og/*.png assets ---
+class TestSharePages:
+    def test_share_page_meta(self, api):
+        for slug in ("worldtrade", "ai-tools"):
+            r = api.get(f"{BASE_URL}/api/share/{slug}", timeout=30)
+            assert r.status_code == 200, r.text[:200]
+            assert "text/html" in r.headers.get("content-type", "")
+            html = r.text
+            assert f'og:title" content=".{slug} ' in html, f"og:title missing tld for {slug}"
+            assert f'og:image" content="{BASE_URL}/og/{slug}.png"' in html, "og:image not absolute"
+            assert 'name="twitter:card" content="summary_large_image"' in html
+            assert 'og:image:width" content="1200"' in html
+            assert 'og:image:height" content="630"' in html
+            buy = f"https://freename.io/discover/{slug}?ref=olive-ears-obey"
+            assert f'http-equiv="refresh" content="1;url={buy}"' in html
+            assert f'window.location.replace("{buy}")' in html
+
+    def test_share_page_has_price(self, api):
+        html = api.get(f"{BASE_URL}/api/share/transfermoney", timeout=30).text
+        assert "From $" in html, "live price not injected into share description"
+
+    def test_og_image_asset(self, api):
+        for slug in TLD_SLUGS:
+            r = api.get(f"{BASE_URL}/og/{slug}.png", timeout=60)
+            assert r.status_code == 200, f"/og/{slug}.png -> {r.status_code}"
+            assert r.headers.get("content-type") == "image/png"
+            assert r.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+    def test_share_unknown_slug_404(self, api):
+        r = api.get(f"{BASE_URL}/api/share/nonexistent", timeout=30)
+        assert r.status_code == 404

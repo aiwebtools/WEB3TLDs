@@ -1,0 +1,37 @@
+{
+  "summary": "Round-3 verification of (1) search-glitch bug fix, (2) confetti/chime celebration + popup purchase flow, (3) branded OG share pages/images, (4) share/copy buttons pointing at /api/share/<slug>, plus regressions. Backend: extended /app/backend/tests/backend_test.py with a TestSharePages class (share meta, live price injection, all 15 /og/*.png assets, 404 for unknown slug) -> 18/18 pytest PASS in 40.5s. Frontend (Playwright, 1920x1080 / 390x844 / 360x740, preview URL): ALL requested items verified working, zero JS/console errors in every run.\n\nBUG FIX VERIFIED (search smoothness): typing m -> mi -> mik -> mike at ~300ms intervals kept the same 15 claim-card-* nodes mounted the whole time (no unmount/remount, no example-vs-results layout jump). At 1 char nothing fired (grid not dimmed); from 2 chars the grid went to opacity-50 while stale prices stayed visible, then placeholders '· · ·' appeared once the new stream started and live prices streamed in progressively, finishing at ~25s with 15/15 real prices ($1,499 AVAILABLE) and the dim removed. Clearing the input back to '' returns to the premium-examples view (oil.transfermoney $4,999 rows, grid not dimmed).\n\nCELEBRATION VERIFIED: claim-card-transfermoney, domain-card-robotsales (body), buy-button-robotsales and example-buy-oil-transfermoney each created a confetti <canvas> and opened a popup that navigated to the right URL: claim/example -> freename.io/results?search=<name>.<tld>&ref=olive-ears-obey (upstream 301s to https://freename.com/result/?search=...&ref=olive-ears-obey, ref preserved), domain card + buy button -> https://freename.io/discover/robotsales?ref=olive-ears-obey. No JS errors from the WebAudio chime in headless. Confetti canvas does not block subsequent clicks.\n\nSHARE PAGES VERIFIED: /api/share/worldtrade and /api/share/ai-tools return 200 text/html with og:title '.<tld> — Premium Web3 TLD', absolute og:image https://<preview-host>/og/<slug>.png, og:image 1200x630, twitter:card summary_large_image, meta refresh 1s + window.location.replace to https://freename.io/discover/<slug>?ref=olive-ears-obey. /og/<slug>.png 200 image/png (valid PNG magic bytes) for all 15 slugs (worldtrade = 493KB). /api/share/nonexistent -> 404. Live price is injected ('From $...').\n\nSHARE BUTTONS VERIFIED: share-x/telegram/whatsapp-transfermoney hrefs all contain URL-encoded %2Fapi%2Fshare%2Ftransfermoney and contain NO raw freename.io URL. copy-button-transfermoney copied https://<host>/api/share/transfermoney to clipboard and showed the 'Share link copied' toast. Alt-clicking share-x-transfermoney produced 0 confetti canvases and 0 popups -> stopPropagation intact.\n\nREGRESSIONS PASS: cached 'voting' resolved 15/15 with prices in <4s at both 1920 and 390; /api/prices returns prices+examples for all 15 TLDs; mobile 390px search + confetti click works (popup lands on correct freename URL) with docScrollWidth == 390; the iteration_2 360px horizontal overflow is FIXED (docScrollWidth == 360, nav subtitle now hidden on small screens); no desktop nav text overlap at 1920.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/og/<slug>.png", "issue": "OG cards are ~500KB each (7.4MB total in frontend/public). Twitter/Facebook fetch fine, but consider quantizing to 8-bit palette or JPEG to cut ~80% of the bytes and repo size."},
+      {"endpoint": "/api/prices", "issue": "Carried over from iteration_2: the keywords 'oil' and 'gold' still appear in every one of the 15 EXAMPLE_KEYWORDS lists, so those two names repeat on all cards (cosmetic)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ClaimYourName premium-examples rows", "issues": ["Example rows are rendered with a permanent opacity-50 (ClaimYourName.jsx ~line 195) on top of already-dim white/[0.005] backgrounds; the price/name text is very low contrast against #050505. These rows are clickable purchase CTAs (example-buy-*), so consider raising to opacity-80 or brightening the text."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Nothing blocking. Optional: shrink /og/*.png file sizes; optional: raise contrast on the opacity-50 example rows; optional: drop repeated 'oil'/'gold' example keywords."
+  ],
+  "critical_code_review_comments": [
+    "celebrate.js: win.opener = null is set on the popup handle before assigning location.href — this is a no-op/ineffective on cross-origin windows and will throw silently (already try/caught). If opener-stripping matters, use window.open(url, '_blank', 'noopener') in the fallback path only (already done) and drop the assignment.",
+    "celebrate.js: if the user clicks 4 purchase elements in <650ms, 4 about:blank tabs open with no dedupe/guard. Consider a short in-flight lock per URL.",
+    "ClaimYourName.jsx: the `firstLine` flag is set but only read after the loop (`if (firstLine) setResults(seed())`); the per-line assignment inside the loop is dead code — harmless but confusing.",
+    "ClaimYourName.jsx catch block `setResults(prev => prev)` is a no-op state write; a real network failure leaves the previous name's results on screen with no error affordance. Add an error state for non-Abort failures.",
+    "The referral/buy URL format is still duplicated in 4 places (ClaimYourName.buyFor, data/domains.buyUrl, server.buy_url_for, server.share_page buy_url). Centralize to avoid another %22-style regression.",
+    "DOMAIN_META now lives in scripts/og_images.py and is imported by server.py — TLD metadata is duplicated with the frontend data/domains.js and server's own tables; single source of truth would be safer."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (18/18 pytest)", "frontend": "100% (all 5 requested verification items pass; no functional defects found)"},
+  "seed_data_creation": "Backend suite inserts one TEST_ lead and one TEST_ status check via the public API (no delete endpoint exists).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "None needed; app has no auth.",
+  "context_for_next_testing_agent": "All three round-3 changes verified end-to-end (search debounce/no-flicker, confetti+popup purchase, OG share pages + share button rewiring) and the iteration_2 360px overflow is fixed. Backend suite now has TestSharePages (18 tests total, ~40s, runs in parallel via pytest.ini xdist). Testing notes: 'voting' is cached and resolves <4s; fresh names stream over ~25s so poll for up to 45s; popups open as about:blank then navigate after 650ms so poll popup.url until it changes; freename.io/results 301-redirects to freename.com/result/ (ref param preserved) — do not treat as a bug. Only cosmetic items left: 500KB OG PNGs, opacity-50 example rows, repeated oil/gold keywords.",
+  "rca_of_the_issue": "Original search glitch RCA (now fixed): every keystroke reset results state and started a 15-request burst, so the grid unmounted/remounted and fell back to the example seed. Fix confirmed in ClaimYourName.jsx: 2-char minimum, 600ms debounce timer + AbortController cancelling the in-flight stream, and setResults only called when new NDJSON lines arrive (seed(acc) merge) so previous rows stay mounted at opacity-50 until the first line of the new stream lands."
+}

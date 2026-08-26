@@ -1,5 +1,5 @@
-from fastapi import FastAPI, APIRouter
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.responses import StreamingResponse, HTMLResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,6 +13,8 @@ import uuid
 import asyncio
 import httpx
 from datetime import datetime, timezone
+
+from scripts.og_images import DOMAIN_META, generate_og_images
 
 
 ROOT_DIR = Path(__file__).parent
@@ -223,6 +225,10 @@ async def refresh_prices():
             upsert=True,
         )
         logger.info(f"refreshed prices for {len(prices)} TLDs, examples for {len(examples)}")
+        try:
+            await asyncio.to_thread(generate_og_images, prices)
+        except Exception as e:
+            logger.warning(f"OG card generation failed: {e!r}")
 
 async def price_refresh_loop():
     while True:
@@ -347,6 +353,62 @@ async def name_preview_stream(name: str):
             NAME_PREVIEW_CACHE.clear()
 
     return StreamingResponse(gen(), media_type="application/x-ndjson")
+
+@api_router.get("/share/{slug}", response_class=HTMLResponse)
+async def share_page(slug: str, request: Request):
+    meta = DOMAIN_META.get(slug)
+    if not meta:
+        return HTMLResponse("Not found", status_code=404)
+    tld, chain, tagline = meta
+
+    doc = await db.tld_prices.find_one({"_id": "current"}, {"_id": 0})
+    price = (doc or {}).get("prices", {}).get(slug)
+    price_txt = f"From ${price:,.2f} — pay once, own forever." if price else "Pay once, own forever."
+
+    fwd_host = request.headers.get("x-forwarded-host")
+    fwd_proto = request.headers.get("x-forwarded-proto")
+    if fwd_host:
+        base = f"{fwd_proto or 'https'}://{fwd_host.split(',')[0].strip()}"
+    else:
+        base = str(request.base_url).rstrip("/")
+    image_url = f"{base}/og/{slug}.png"
+    page_url = f"{base}/api/share/{slug}"
+    buy_url = f"https://freename.io/discover/{slug}?ref=olive-ears-obey"
+    title = f"{tld} — Premium Web3 TLD"
+    desc = f"{tagline}. {price_txt} Minted on {chain}. Buy on Freename."
+
+    html = f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>{title}</title>
+<meta name="description" content="{desc}" />
+<link rel="canonical" href="{page_url}" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="AIWEBTOOLS.AI" />
+<meta property="og:url" content="{page_url}" />
+<meta property="og:title" content="{title}" />
+<meta property="og:description" content="{desc}" />
+<meta property="og:image" content="{image_url}" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{title}" />
+<meta name="twitter:description" content="{desc}" />
+<meta name="twitter:image" content="{image_url}" />
+<meta http-equiv="refresh" content="1;url={buy_url}" />
+<script>window.location.replace("{buy_url}");</script>
+</head>
+<body style="background:#050505;color:#fff;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0">
+<div style="text-align:center">
+<p style="color:#CCFF00;letter-spacing:0.2em">{tld}</p>
+<p>Taking you to secure checkout on Freename…</p>
+<a href="{buy_url}" style="color:#CCFF00">Continue to purchase {tld}</a>
+</div>
+</body>
+</html>"""
+    return HTMLResponse(html)
+
 
 # Include the router in the main app
 app.include_router(api_router)

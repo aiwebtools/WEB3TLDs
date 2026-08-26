@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Loader2, Sparkles } from "lucide-react";
 import { CATEGORIES, FROM_PRICES } from "../data/domains";
+import { celebrateAndOpen } from "../utils/celebrate";
 
 const CHAIN_OF = {};
 CATEGORIES.forEach((c) => c.domains.forEach((d) => (CHAIN_OF[d.slug] = d.chain || c.chain)));
@@ -22,7 +23,7 @@ export const ClaimYourName = ({ examples }) => {
     clearTimeout(timer.current);
     abortRef.current?.abort();
     const clean = name.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "").slice(0, 30);
-    if (!clean) {
+    if (clean.length < 2) {
       setResults([]);
       setLoading(false);
       return;
@@ -36,7 +37,6 @@ export const ClaimYourName = ({ examples }) => {
         SLUGS.map((slug) =>
           acc[slug] || { slug, fqdn: `${clean}.${slug}`, price: null, status: null, buyUrl: buyFor(slug) }
         );
-      setResults(seed());
       try {
         const resp = await fetch(
           `${process.env.REACT_APP_BACKEND_URL}/api/name-preview-stream?name=${encodeURIComponent(clean)}`,
@@ -46,6 +46,7 @@ export const ClaimYourName = ({ examples }) => {
         const decoder = new TextDecoder();
         const acc = {};
         let buf = "";
+        let firstLine = true;
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -56,15 +57,19 @@ export const ClaimYourName = ({ examples }) => {
             if (!line.trim()) continue;
             const r = JSON.parse(line);
             acc[r.slug] = r;
+            // Keep the previous name's results on screen until the new data
+            // actually starts arriving — no flicker while typing.
             setResults(seed(acc));
+            firstLine = false;
           }
         }
+        if (firstLine) setResults(seed());
       } catch (e) {
         if (e.name !== "AbortError") setResults((prev) => prev);
       } finally {
         if (!ctrl.signal.aborted) setLoading(false);
       }
-    }, 400);
+    }, 600);
     return () => clearTimeout(timer.current);
   }, [name]);
 
@@ -202,10 +207,14 @@ export const ClaimYourName = ({ examples }) => {
                               href={ex.buyUrl}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                celebrateAndOpen(ex.buyUrl, e);
+                              }}
                               data-testid={`example-buy-${ex.name.replace(/\./g, "-")}`}
                               className="group flex items-center justify-between gap-2 border border-white/[0.06] bg-white/[0.01] px-2.5 py-1.5 hover:border-[#CCFF00]/50 hover:bg-white/[0.04] transition-colors"
                             >
-                              <span className="font-mono2 text-[11px] md:text-xs text-white/70 group-hover:text-[#CCFF00] transition-colors break-all">
+                              <span className="font-mono2 text-[11px] md:text-xs text-white/85 group-hover:text-[#CCFF00] transition-colors break-all">
                                 {ex.name}
                               </span>
                               <span className="font-mono2 text-[11px] md:text-xs font-medium text-transparent bg-clip-text bg-gradient-to-r from-[#CCFF00] to-cyan-300 whitespace-nowrap inline-flex items-center gap-1.5">
@@ -226,7 +235,7 @@ export const ClaimYourName = ({ examples }) => {
             })}
           </div>
         ) : (
-        <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" data-testid="claim-results">
+        <div className={`mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`} data-testid="claim-results">
           {visible.map((r, i) => {
             const available = r.status === "AVAILABLE";
             const taken = r.status && r.status !== "AVAILABLE";
@@ -269,6 +278,10 @@ export const ClaimYourName = ({ examples }) => {
                     href={r.buyUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      celebrateAndOpen(r.buyUrl, e);
+                    }}
                     data-testid={`claim-card-${r.slug}`}
                     className="group block border border-white/10 bg-white/[0.02] backdrop-blur-md p-5 transition-all duration-300 hover:border-[#CCFF00]/60 hover:bg-white/[0.04] hover:-translate-y-1 hover:shadow-[0_15px_40px_-15px_rgba(204,255,0,0.25)]"
                   >
