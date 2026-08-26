@@ -102,14 +102,86 @@
 }
 
 .btn-acid {
+  position: relative;
+  overflow: hidden;
   transition:
     background-color 0.3s ease,
     color 0.3s ease,
-    box-shadow 0.3s ease;
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+.btn-acid::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
 }
 .btn-acid:hover {
   background-color: #e0ff66;
   box-shadow: 0 0 24px rgba(204, 255, 0, 0.35);
+  transform: translateY(-2px);
+}
+.btn-acid:hover::after {
+  left: 130%;
+}
+.btn-acid:active {
+  transform: translateY(0);
+}
+
+@keyframes grid-pan {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 72px 72px;
+  }
+}
+
+@keyframes orb-drift-1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(80px, 60px) scale(1.15);
+  }
+}
+@keyframes orb-drift-2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-100px, -50px) scale(0.9);
+  }
+}
+@keyframes orb-drift-3 {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(60px, -40px);
+  }
+  66% {
+    transform: translate(-40px, 50px);
+  }
+}
+
+.hero-grid-bg {
+  animation: grid-pan 14s linear infinite;
+}
+.orb-float-1 {
+  animation: orb-drift-1 18s ease-in-out infinite;
+}
+.orb-float-2 {
+  animation: orb-drift-2 22s ease-in-out infinite;
+}
+.orb-float-3 {
+  animation: orb-drift-3 26s ease-in-out infinite;
 }
 
 @keyframes spin-slow {

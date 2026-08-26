@@ -4,10 +4,10 @@ import { Toaster } from "./components/ui/sonner";
 import { Nav } from "./components/Nav";
 import { Hero } from "./components/Hero";
 import { Marquee } from "./components/Marquee";
+import { HowItWorks } from "./components/HowItWorks";
 import { FilterBar } from "./components/FilterBar";
 import { CategorySection } from "./components/CategorySection";
 import { Footer } from "./components/Footer";
-import { LeadFormModal } from "./components/LeadFormModal";
 import { CATEGORIES } from "./data/domains";
 
 const countMatches = (filter) =>
@@ -19,7 +19,14 @@ const countMatches = (filter) =>
 
 function App() {
   const [chainFilter, setChainFilter] = useState("All");
-  const [offerOpen, setOfferOpen] = useState(false);
+  const [prices, setPrices] = useState(null);
+
+  useEffect(() => {
+    fetch(`${process.env.REACT_APP_BACKEND_URL}/api/prices`)
+      .then((r) => r.json())
+      .then((d) => d.prices && setPrices(d.prices))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const lenis = new Lenis({ duration: 1.2, smoothWheel: true });
@@ -52,18 +59,17 @@ function App() {
       <main>
         <Hero />
         <Marquee />
+        <HowItWorks />
         <FilterBar
           chainFilter={chainFilter}
           setChainFilter={setChainFilter}
           matchCount={countMatches(chainFilter)}
-          onOffer={() => setOfferOpen(true)}
         />
         {CATEGORIES.map((category) => (
-          <CategorySection key={category.id} category={category} chainFilter={chainFilter} />
+          <CategorySection key={category.id} category={category} chainFilter={chainFilter} prices={prices} />
         ))}
       </main>
-      <Footer onOffer={() => setOfferOpen(true)} />
-      <LeadFormModal open={offerOpen} onClose={() => setOfferOpen(false)} />
+      <Footer />
       <Toaster
         theme="dark"
         position="bottom-right"

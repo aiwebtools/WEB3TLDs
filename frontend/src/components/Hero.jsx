@@ -37,7 +37,9 @@ export const Hero = () => {
         />
         <div className="absolute inset-0 bg-black/70" />
         <div className="absolute inset-0 hero-grid-bg" />
-        <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full bg-[#CCFF00]/[0.07] blur-[140px]" />
+        <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full bg-[#CCFF00]/[0.07] blur-[140px] orb-float-1" />
+        <div className="absolute bottom-0 right-1/5 w-[450px] h-[450px] rounded-full bg-[#CCFF00]/[0.05] blur-[120px] orb-float-2" />
+        <div className="absolute top-1/3 right-1/3 w-[300px] h-[300px] rounded-full bg-white/[0.03] blur-[100px] orb-float-3" />
       </motion.div>
 
       <motion.div style={{ y: yText, opacity }} className="max-w-[1600px] mx-auto w-full px-6 md:px-12 pb-16 md:pb-24 pt-40">

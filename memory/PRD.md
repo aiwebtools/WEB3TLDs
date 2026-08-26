@@ -32,14 +32,20 @@ An app that sells 15 Web3 TLD domains (across Money Transfer, AI & Technology, R
 - Live pricing scraped from each Freename discover page — "From $X.XX" shown per card (2026-08-26)
 - Chain filter bar (All / Polygon / Solana), sticky, with live match count
 - Copy referral link button per card (clipboard + toast)
-- Bulk offer lead form (modal) → POST /api/leads stored in MongoDB; GET /api/leads for retrieval
+- Bulk offer lead form (modal) → POST /api/leads stored in MongoDB (2026-08-26, later removed per user request)
+- Price auto-refresh: backend polls Freename v2 API every 6h, caches in Mongo, serves /api/prices; frontend live-overrides card prices (2026-08-26)
+- Category editorial images with parallax + spotlight frames (2026-08-26)
+- "What exactly are you buying?" education section: TLD/SLD ownership model, 6 real-life utility cards, 3-step strip (2026-08-26)
+- Per-card: custom artwork (8 AI-generated via Gemini Nano Banana, 7 curated stock pending LLM budget top-up), example names (mike.cashtransfer style), 3 plain-English utilities, MINTED ON POLYGON/SOLANA badges
+- Whole card clickable → purchase URL; card name hover accent; shine + lift effects on all buttons
+- Nav branding upgrade: live pulse pill, Browse Names + Freename CTAs; animated hero (panning grid, 3 drifting glow orbs)
 
 ## Backlog
-- P0: none blocking
+- P0: Regenerate 7 remaining custom card images once user tops up Universal Key (Profile → Manage plan → Universal Key → Add Balance): ai-tools, aimainframe, aitoolscompany, robotsales, robotstore, worldpeace, worldtrade
 - P1: Email notification to owner when a lead arrives (Resend); admin view of leads
-- P2: Auto-refresh pricing from Freename, bundle deals section, live availability check via Freename API
+- P2: Bundle deals section, live availability check, per-domain OG share cards
 
 ## Next Tasks
-1. Wire lead notifications to owner email (Resend integration)
-2. Build a simple /admin leads viewer (protected)
-3. Refresh pricing periodically or on demand
+1. Regenerate remaining 7 custom images after budget top-up
+2. Wire lead notifications to owner email (Resend integration)
+3. Build a simple /admin leads viewer (protected)

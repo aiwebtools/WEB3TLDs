@@ -8,6 +8,8 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List
 import uuid
+import asyncio
+import httpx
 from datetime import datetime, timezone
 
 
@@ -99,6 +101,71 @@ async def get_leads():
         if isinstance(lead['timestamp'], str):
             lead['timestamp'] = datetime.fromisoformat(lead['timestamp'])
     return leads
+
+TLD_SLUGS = [
+    "transfermoney", "transfercoin", "cointransfer", "transfercash", "cashtransfer",
+    "ai-tools", "aiwebtools", "aimainframe", "aitoolscompany",
+    "robotsales", "robotshop", "robotstore",
+    "worldpeace", "worldtrade", "worldtrader",
+]
+PRICE_REFRESH_INTERVAL = 6 * 60 * 60
+
+def collect_prices(node, out, suffix):
+    if isinstance(node, dict):
+        name = node.get("name")
+        price = node.get("price")
+        if (
+            isinstance(name, str)
+            and name.lower().endswith(suffix)
+            and isinstance(price, dict)
+            and price.get("amount")
+        ):
+            out.append(float(price["amount"]))
+        for v in node.values():
+            collect_prices(v, out, suffix)
+    elif isinstance(node, list):
+        for item in node:
+            collect_prices(item, out, suffix)
+
+async def fetch_tld_price(slug: str):
+    try:
+        async with httpx.AsyncClient(timeout=20) as http:
+            r = await http.get(f"https://v2-api.freename.com/api/v2/reseller/search/{slug}?searchString=")
+            result = r.json().get("data", {}).get("result", {})
+        prices = []
+        collect_prices(result, prices, f".{slug}")
+        return min(prices) if prices else None
+    except Exception as e:
+        logger.warning(f"price fetch failed for {slug}: {e}")
+        return None
+
+async def refresh_prices():
+    prices = {}
+    for slug in TLD_SLUGS:
+        price = await fetch_tld_price(slug)
+        if price is not None:
+            prices[slug] = price
+    if prices:
+        await db.tld_prices.update_one(
+            {"_id": "current"},
+            {"$set": {"prices": prices, "updated_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True,
+        )
+        logger.info(f"refreshed prices for {len(prices)} TLDs")
+
+async def price_refresh_loop():
+    while True:
+        await refresh_prices()
+        await asyncio.sleep(PRICE_REFRESH_INTERVAL)
+
+@app.on_event("startup")
+async def start_price_refresh():
+    asyncio.create_task(price_refresh_loop())
+
+@api_router.get("/prices")
+async def get_prices():
+    doc = await db.tld_prices.find_one({"_id": "current"}, {"_id": 0})
+    return doc or {"prices": {}, "updated_at": None}
 
 # Include the router in the main app
 app.include_router(api_router)

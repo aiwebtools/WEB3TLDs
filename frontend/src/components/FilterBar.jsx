@@ -1,8 +1,6 @@
-import { Handshake } from "lucide-react";
-
 const FILTERS = ["All", "Polygon", "Solana"];
 
-export const FilterBar = ({ chainFilter, setChainFilter, matchCount, onOffer }) => {
+export const FilterBar = ({ chainFilter, setChainFilter, matchCount }) => {
   return (
     <div
       className="sticky top-16 z-40 bg-[#050505]/85 backdrop-blur-xl border-b border-white/10"
@@ -31,15 +29,9 @@ export const FilterBar = ({ chainFilter, setChainFilter, matchCount, onOffer }) 
             {matchCount} TLDs
           </span>
         </div>
-        <button
-          onClick={onOffer}
-          data-testid="filter-bar-offer-button"
-          className="btn-acid inline-flex items-center gap-2 bg-[#CCFF00] text-[#050505] font-mono2 text-[11px] md:text-xs tracking-[0.15em] uppercase px-4 md:px-5 py-2"
-        >
-          <Handshake className="w-4 h-4" strokeWidth={1.5} />
-          <span className="hidden sm:inline">Make a Bulk Offer</span>
-          <span className="sm:hidden">Offer</span>
-        </button>
+        <span className="font-mono2 text-[10px] md:text-xs tracking-[0.2em] uppercase text-[#CCFF00]/70" data-testid="filter-bar-live-pricing">
+          Live Freename Pricing
+        </span>
       </div>
     </div>
   );
