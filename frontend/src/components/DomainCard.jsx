@@ -118,7 +118,7 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
           <div className="mt-3 flex items-baseline gap-2" data-testid={`domain-price-${domain.slug}`}>
             <span className="font-mono2 text-[10px] tracking-[0.2em] uppercase text-white/35">From</span>
             <span className="font-mono2 text-lg font-medium text-transparent bg-clip-text bg-gradient-to-r from-[#CCFF00] to-cyan-300">${price.toFixed(2)}</span>
-            <span className="font-mono2 text-[10px] tracking-[0.15em] uppercase text-white/35">— once, forever · tap card to buy</span>
+            <span className="font-mono2 text-[10px] tracking-[0.15em] uppercase text-white/45">— once, forever</span>
           </div>
         )}
 
@@ -128,12 +128,40 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
           Your name could be
         </p>
         <div className="mt-2 flex flex-wrap gap-1.5" data-testid={`domain-examples-${domain.slug}`}>
-          {examples.map((ex) => (
-            <span key={ex} className="font-mono2 text-[11px] text-white/65 border border-white/10 bg-white/[0.03] px-2 py-1">
-              {ex}
-            </span>
-          ))}
+          {examples.map((ex) =>
+            domain.slug === "aiwebtools" ? (
+              <a
+                key={ex}
+                href="https://aiwebtools.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                data-testid={`example-link-${ex.replace(/\./g, "-")}`}
+                title="See it live at aiwebtools.app — free AI tools"
+                className="font-mono2 text-[11px] text-[#CCFF00]/80 border border-[#CCFF00]/25 bg-[#CCFF00]/[0.05] px-2 py-1 hover:text-[#CCFF00] hover:border-[#CCFF00]/60 transition-colors"
+              >
+                {ex} ↗
+              </a>
+            ) : (
+              <span key={ex} className="font-mono2 text-[11px] text-white/65 border border-white/10 bg-white/[0.03] px-2 py-1">
+                {ex}
+              </span>
+            )
+          )}
         </div>
+        {domain.slug === "aiwebtools" && (
+          <a
+            href="https://aiwebtools.app"
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="aiwebtools-branding-link"
+            className="mt-3 inline-flex items-center gap-2 font-mono2 text-[11px] tracking-[0.15em] uppercase text-[#CCFF00] hover:text-white transition-colors"
+          >
+            Live proof — free AI tools at aiwebtools.app
+            <ArrowUpRight className="w-3.5 h-3.5" strokeWidth={2} />
+          </a>
+        )}
 
         <ul className="mt-5 space-y-2 flex-1" data-testid={`domain-utilities-${domain.slug}`}>
           {utilities.map(([icon, text]) => {
@@ -147,7 +175,7 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
           })}
         </ul>
 
-        <div className="mt-6 flex items-center justify-between gap-2">
+        <div className="mt-6 space-y-2">
           <div className="flex items-center gap-1.5" data-testid={`share-row-${domain.slug}`}>
             {shareLinks.map(({ id, icon: Icon, href, hover }) => (
               <a
@@ -163,25 +191,25 @@ export const DomainCard = ({ domain, index, defaultChain, prices }) => {
                 <Icon className="w-3.5 h-3.5" strokeWidth={1.5} />
               </a>
             ))}
+            <button
+              onClick={copyLink}
+              data-testid={`copy-button-${domain.slug}`}
+              aria-label={`Copy referral link for ${domain.name}`}
+              className="p-2 border border-white/15 text-white/50 hover:text-fuchsia-400 hover:border-fuchsia-400/50 transition-colors"
+            >
+              <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
+            </button>
           </div>
-          <button
-            onClick={copyLink}
-            data-testid={`copy-button-${domain.slug}`}
-            aria-label={`Copy referral link for ${domain.name}`}
-            className="p-2.5 border border-white/15 text-white/50 hover:text-fuchsia-400 hover:border-fuchsia-400/50 transition-colors"
-          >
-            <Copy className="w-3.5 h-3.5" strokeWidth={1.5} />
-          </button>
           <a
             href={url}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
             data-testid={`buy-button-${domain.slug}`}
-            className="btn-acid flex-1 inline-flex items-center justify-center gap-2 bg-[#CCFF00] text-[#050505] font-mono2 text-[11px] tracking-[0.15em] uppercase px-4 py-3"
+            className="btn-acid w-full inline-flex items-center justify-center gap-2 bg-[#CCFF00] text-[#050505] font-mono2 text-[11px] tracking-[0.15em] uppercase px-4 py-3 whitespace-nowrap"
           >
             Buy on Freename
-            <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
+            <ArrowUpRight className="w-3.5 h-3.5 shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={2} />
           </a>
         </div>
       </div>

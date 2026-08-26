@@ -21,11 +21,15 @@ const countMatches = (filter) =>
 function App() {
   const [chainFilter, setChainFilter] = useState("All");
   const [prices, setPrices] = useState(null);
+  const [examples, setExamples] = useState(null);
 
   useEffect(() => {
     fetch(`${process.env.REACT_APP_BACKEND_URL}/api/prices`)
       .then((r) => r.json())
-      .then((d) => d.prices && setPrices(d.prices))
+      .then((d) => {
+        if (d.prices) setPrices(d.prices);
+        if (d.examples) setExamples(d.examples);
+      })
       .catch(() => {});
   }, []);
 
@@ -62,7 +66,7 @@ function App() {
         <Hero />
         <Marquee />
         <HowItWorks />
-        <ClaimYourName />
+        <ClaimYourName examples={examples} />
         <FilterBar
           chainFilter={chainFilter}
           setChainFilter={setChainFilter}

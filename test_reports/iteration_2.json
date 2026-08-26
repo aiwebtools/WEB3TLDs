@@ -1,0 +1,40 @@
+{
+  "summary": "Re-verification round for the 5 fixes from iteration_1 plus new mobile-optimization requirement. Backend: existing pytest suite /app/backend/tests/backend_test.py rerun -> 14/14 pass (28.5s); /api/prices returns 15 TLDs with 15 distinct curated example sets (0 identical groups). Frontend (Playwright 1920x1080, 390x844, 360x740): buy-button overflow FIXED (all 15 buy buttons scrollWidth==clientWidth, 232/232 in the 282px 5-col cards, share/copy icons now on their own row); mobile nav FIXED (nav-mobile-toggle 36x36 visible at 390, opens nav-mobile-menu with all 5 chapter links + nav-mobile-link-free-ai-tools -> https://aiwebtools.app target=_blank, closes on link tap and scrolls to #chapter-01, scrollY 9573); price flicker FIXED (fresh random name qajccbonv showed 15 '· · ·' placeholders for the first ~7s, no stale $9.98, then real live prices $19.98/$9.99 streamed in progressively); hero video FIXED (single source /videos/hero-stock.mp4, currentSrc resolves to it, video.error=null); examples diversity FIXED (15/15 claim example cards with 8 examples each, no two identical; domain-card curated examples also all distinct). Regression at 1920: 'voting' resolved 15/15 in 1.2s (cached), all claim-card hrefs are clean https://freename.io/results?search=voting.<tld>&ref=olive-ears-obey with target=_blank (no %22/quotes), buy-button-transfermoney -> https://freename.io/discover/transfermoney?ref=olive-ears-obey target=_blank. One NEW real mobile defect: horizontal page overflow at 360px caused by the nav bar.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/prices", "issue": "Every per-TLD keyword list still contains 'oil' and 'gold' (hard-coded in all 15 EXAMPLE_KEYWORDS entries), so those two names repeat on every card. Lists are otherwise distinct — cosmetic only."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Nav (360px viewport)", "issue": "Horizontal page overflow at 360x740: document.scrollWidth=369 vs viewport 360 (page scrolls 9px sideways). Nav inner row content measures 364px (logo block 182px + right group 158px [Browse hidden, FREENAME 110px + 36px hamburger] + px-6 = 48px padding) which exceeds 360px. Side effect: the 'AIWEBTOOLS.AI' logo text is visually clipped at the right edge. At 390px there is no overflow (scrollWidth 390).", "selector": "[data-testid=\"site-nav\"] / [data-testid=\"nav-mobile-toggle\"]", "priority": "MEDIUM"},
+      {"component": "ClaimYourName TLD filter chips (mobile)", "issue": "Filter chips are only 24px tall at 390px (filter-chip-all ... filter-chip-worldtrader), well below the ~40px tap-target requirement; chain filters (filter-all/polygon/solana) are 35px and nav-logo 33px. Chips do wrap correctly with no overflow (container scrollWidth==clientWidth==342).", "selector": "[data-testid^=\"filter-chip-\"]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Footer (390px)", "issues": ["Giant outlined 'AIWEBTOOLS' wordmark is clipped mid-word ('AIWEBTO') at the right edge — no document overflow, but reads as a rendering glitch on phones; consider scaling text-[Xvw] so the full word fits."]},
+      {"screen": "Mobile hero/nav (360px)", "issues": ["Logo lockup (AIWEBTOOLS.AI + 'PREMIUM WEB3 TLDS') plus FREENAME CTA plus hamburger is too wide for 360px; reduce logo font/tracking or hide the subtitle below 400px."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix 360px horizontal overflow: shrink nav logo (hide 'Premium Web3 TLDs' subtitle or reduce tracking) and/or reduce nav horizontal padding to px-4 below sm so the header row fits 360px.",
+    "Increase mobile tap-target height for [data-testid^=\"filter-chip-\"] to >= 40px (add py-2.5 / min-h-[40px] on small screens).",
+    "Optional: scale the footer giant AIWEBTOOLS wordmark so it is not clipped mid-word on phones.",
+    "Optional: drop the repeated 'oil'/'gold' keywords from every EXAMPLE_KEYWORDS list in server.py for fully unique example sets."
+  ],
+  "critical_code_review_comments": [
+    "ClaimYourName.jsx is still 291 lines mixing stream consumption, filters, examples grid and results grid — extract the NDJSON stream into a hook.",
+    "buyFor() in ClaimYourName.jsx still duplicates buyUrl() in data/domains.js and buy_url_for() in server.py — three copies of the referral URL format keeps the %22 regression risk alive.",
+    "DomainCard.jsx card-level onClick + nested anchors: the whole <article role=\"link\"> triggers window.open while inner anchors stopPropagation — works, but a single anchor wrapper would be more accessible."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (14/14 pytest)", "frontend": "~92% (all 5 fixes verified + desktop regression pass; 1 new mobile overflow bug at 360px + small tap targets)"},
+  "seed_data_creation": "Backend suite inserts one TEST_ lead and one TEST_ status check via public API (no delete endpoint exists).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "None needed; app has no auth and /app/memory/test_credentials.md is intentionally empty.",
+  "context_for_next_testing_agent": "All 5 iteration_1 fixes are verified fixed (buy-button overflow, mobile hamburger nav, price placeholder '· · ·' instead of stale seed price, single hero video source, per-TLD example diversity). Remaining known-unverifiable in headless Chromium: hero-stock.mp4 playback (H.264 cannot decode; currentSrc + no error verified). Fresh uncached name searches stream over ~20-30s; 'voting' is cached and resolves in ~1.2s. Only open frontend issue: 360px nav overflow (docScrollW 369 vs 360) and 24px-tall filter chips.",
+  "rca_of_the_issue": "360px overflow RCA: Nav inner container uses px-6 (48px total) and the logo block renders at its intrinsic 182px (font-mono2 text-sm tracking-[0.25em] 'AIWEBTOOLS.AI'); the right-hand group is 158px (FREENAME pill 110px + 36px hamburger + gap-3). 48+182+158 = 388px of content in a 360px viewport, so the flex row's scrollWidth becomes 364px and the document scrollWidth 369px, producing a 9px horizontal scroll and a clipped logo."
+}

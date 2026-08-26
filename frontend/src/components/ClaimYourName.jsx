@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUpRight, Loader2, Sparkles } from "lucide-react";
-import { CATEGORIES } from "../data/domains";
+import { CATEGORIES, FROM_PRICES } from "../data/domains";
 
 const CHAIN_OF = {};
 CATEGORIES.forEach((c) => c.domains.forEach((d) => (CHAIN_OF[d.slug] = d.chain || c.chain)));
@@ -10,14 +10,17 @@ const SLUGS = CATEGORIES.flatMap((c) => c.domains.map((d) => d.slug));
 const fmt = (p) =>
   p == null ? null : `$${Number(p).toLocaleString("en-US", { maximumFractionDigits: 2 })}`;
 
-export const ClaimYourName = () => {
+export const ClaimYourName = ({ examples }) => {
   const [name, setName] = useState("");
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState("all");
   const timer = useRef(null);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     clearTimeout(timer.current);
+    abortRef.current?.abort();
     const clean = name.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/^-+|-+$/g, "").slice(0, 30);
     if (!clean) {
       setResults([]);
@@ -26,24 +29,50 @@ export const ClaimYourName = () => {
     }
     setLoading(true);
     timer.current = setTimeout(async () => {
-      try {
-        const r = await fetch(
-          `${process.env.REACT_APP_BACKEND_URL}/api/name-preview?name=${encodeURIComponent(clean)}`
+      const ctrl = new AbortController();
+      abortRef.current = ctrl;
+      const buyFor = (slug) => `https://freename.io/results?search=${clean}.${slug}&ref=olive-ears-obey`;
+      const seed = (acc = {}) =>
+        SLUGS.map((slug) =>
+          acc[slug] || { slug, fqdn: `${clean}.${slug}`, price: null, status: null, buyUrl: buyFor(slug) }
         );
-        const d = await r.json();
-        setResults(d.results || []);
-      } catch {
-        setResults([]);
+      setResults(seed());
+      try {
+        const resp = await fetch(
+          `${process.env.REACT_APP_BACKEND_URL}/api/name-preview-stream?name=${encodeURIComponent(clean)}`,
+          { signal: ctrl.signal }
+        );
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        const acc = {};
+        let buf = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split("\n");
+          buf = lines.pop();
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            const r = JSON.parse(line);
+            acc[r.slug] = r;
+            setResults(seed(acc));
+          }
+        }
+      } catch (e) {
+        if (e.name !== "AbortError") setResults((prev) => prev);
       } finally {
-        setLoading(false);
+        if (!ctrl.signal.aborted) setLoading(false);
       }
-    }, 500);
+    }, 400);
     return () => clearTimeout(timer.current);
   }, [name]);
 
   const display = results.length
     ? results
-    : SLUGS.map((slug) => ({ slug, fqdn: `${name || "yourname"}.${slug}`, price: null, status: null, buyUrl: null }));
+    : SLUGS.map((slug) => ({ slug, fqdn: `${name || "yourname"}.${slug}`, price: FROM_PRICES[slug] ?? null, status: null, buyUrl: null }));
+
+  const visible = filter === "all" ? display : display.filter((r) => r.slug === filter);
 
   return (
     <section
@@ -79,6 +108,26 @@ export const ClaimYourName = () => {
           transition={{ duration: 0.8, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
           className="mt-12 max-w-2xl"
         >
+          <div className="mb-4 flex flex-wrap gap-1.5" data-testid="claim-tld-filters">
+            {["all", ...SLUGS].map((slug) => {
+              const active = filter === slug;
+              return (
+                <button
+                  key={slug}
+                  onClick={() => setFilter(slug)}
+                  data-testid={`filter-chip-${slug}`}
+                  aria-pressed={active}
+                  className={`font-mono2 text-[10px] tracking-[0.12em] uppercase px-3 py-2.5 md:px-2 md:py-1 border transition-colors ${
+                    active
+                      ? "bg-[#CCFF00] text-[#050505] border-[#CCFF00]"
+                      : "border-white/15 text-white/50 hover:text-[#CCFF00] hover:border-[#CCFF00]/50"
+                  }`}
+                >
+                  {slug === "all" ? "All" : `.${slug}`}
+                </button>
+              );
+            })}
+          </div>
           <div className="claim-glow">
             <div className="relative bg-[#0A0A0A] border border-white/10 flex items-center">
               <Sparkles className="w-5 h-5 text-[#CCFF00] ml-5 shrink-0" strokeWidth={1.5} />
@@ -110,8 +159,75 @@ export const ClaimYourName = () => {
           </AnimatePresence>
         </motion.div>
 
+        {!name && examples ? (
+          <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="claim-results">
+            {SLUGS.filter((s) => filter === "all" || s === filter).map((slug, i) => {
+              const list = (examples[slug] || []).slice(0, 8);
+              return (
+                <motion.div
+                  key={slug}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ duration: 0.5, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
+                  className="border border-white/10 bg-white/[0.02] backdrop-blur-md p-5"
+                  data-testid={`claim-card-${slug}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono2 text-sm md:text-base text-white">.{slug}</span>
+                    <span className="font-mono2 text-[9px] tracking-[0.2em] uppercase text-white/30">
+                      Minted on {CHAIN_OF[slug]}
+                    </span>
+                  </div>
+                  <div className="mt-4 space-y-1.5">
+                    {list.length
+                      ? list.map((ex) => {
+                          const sold = ex.status && ex.status !== "AVAILABLE";
+                          return sold ? (
+                            <div
+                              key={ex.name}
+                              data-testid={`example-sold-${ex.name.replace(/\./g, "-")}`}
+                              className="flex items-center justify-between gap-2 border border-white/[0.04] bg-white/[0.005] px-2.5 py-1.5 opacity-50"
+                            >
+                              <span className="font-mono2 text-[11px] md:text-xs text-white/40 line-through break-all">
+                                {ex.name}
+                              </span>
+                              <span className="font-mono2 text-[9px] tracking-[0.15em] uppercase text-fuchsia-400/80 whitespace-nowrap">
+                                No longer available
+                              </span>
+                            </div>
+                          ) : (
+                            <a
+                              key={ex.name}
+                              href={ex.buyUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              data-testid={`example-buy-${ex.name.replace(/\./g, "-")}`}
+                              className="group flex items-center justify-between gap-2 border border-white/[0.06] bg-white/[0.01] px-2.5 py-1.5 hover:border-[#CCFF00]/50 hover:bg-white/[0.04] transition-colors"
+                            >
+                              <span className="font-mono2 text-[11px] md:text-xs text-white/70 group-hover:text-[#CCFF00] transition-colors break-all">
+                                {ex.name}
+                              </span>
+                              <span className="font-mono2 text-[11px] md:text-xs font-medium text-transparent bg-clip-text bg-gradient-to-r from-[#CCFF00] to-cyan-300 whitespace-nowrap inline-flex items-center gap-1.5">
+                                {fmt(ex.price)}
+                                <ArrowUpRight className="w-3 h-3 text-[#CCFF00]" strokeWidth={2} />
+                              </span>
+                            </a>
+                          );
+                        })
+                      : (
+                        <p className="font-mono2 text-[10px] tracking-[0.2em] uppercase text-white/25 py-2">
+                          Loading live premium names…
+                        </p>
+                      )}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
         <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" data-testid="claim-results">
-          {display.map((r, i) => {
+          {visible.map((r, i) => {
             const available = r.status === "AVAILABLE";
             const taken = r.status && r.status !== "AVAILABLE";
             const inner = (
@@ -167,6 +283,7 @@ export const ClaimYourName = () => {
             );
           })}
         </div>
+        )}
       </div>
     </section>
   );

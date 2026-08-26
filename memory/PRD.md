@@ -1,54 +1,32 @@
-# PRD — AIWEBTOOLS.AI Web3 Domain Showcase
+# PRD — AIWEBTOOLS.AI Premium Web3 TLD Showcase
 
 ## Original Problem Statement
-An app that sells 15 Web3 TLD domains (across Money Transfer, AI & Technology, Robotics & Automation, Global & World categories, on Polygon and Solana chains). Each domain has a direct purchase link on Freename with referral `ref=olive-ears-obey`. Pitch each domain. Presented by AIWEBTOOLS.AI.
-
-## User Personas
-- Web3 investor/speculator hunting premium TLDs
-- Startup founder looking for a category-defining domain
-- Collector browsing curated domain portfolios
+Showcase/sell 15 premium Web3 TLDs (.transfermoney, .transfercoin, .cointransfer, .transfercash, .cashtransfer, .ai-tools, .aiwebtools, .aimainframe, .aitoolscompany, .robotsales, .robotshop, .robotstore, .worldpeace, .worldtrade, .worldtrader) with direct Freename purchase links (referral `ref=olive-ears-obey`). Dark futuristic Web3 look, neon #CCFF00 accents, Awwwards-level UI, Framer Motion, Lenis smooth scroll, live Freename pricing, category showcases, custom pitches, name search with live pricing, custom AI art, social share + OG tags, hero promo video loop.
 
 ## Architecture
-- Pure static frontend: React 19 + Tailwind + framer-motion + @studio-freight/lenis + react-fast-marquee
-- No backend database usage (all domain data hardcoded in `src/data/domains.js`)
-- Purchase links go directly to freename.io (external checkout)
+- Frontend: React + Tailwind + framer-motion + Lenis + react-fast-marquee (`/app/frontend/src/components/`)
+- Backend: FastAPI `/app/backend/server.py`, MongoDB via MONGO_URL/DB_NAME
+- Freename data: `v2-api.freename.com/api/v2/reseller/search/{tld}?searchString=` (public)
+- Media: `/app/frontend/public/images/domains/*.png` (15 AI-generated card images), `/app/frontend/public/videos/hero-stock.mp4` (hero bg loop)
 
-## Core Requirements (static)
-- 15 domains, 4 numbered categories, per-domain pitch copy
-- Buy buttons link to `https://freename.io/discover/{slug}?ref=olive-ears-obey`
-- Chain badges (Polygon purple tint, Solana green tint)
-- Dark futuristic Web3 aesthetic (void black + acid green #CCFF00)
-- Presented by AIWEBTOOLS.AI branding
-
-## Implemented (2026-08-26)
-- Kinetic hero with masked line-by-line reveal + scroll parallax (framer-motion)
-- Lenis smooth momentum scrolling with anchor-based smooth nav
-- Editorial marquee (react-fast-marquee, slow drift)
-- 4 numbered manifesto chapters with staggered glassmorphism domain cards
-- Chain badges per card; "Live" verified badge on .worldtrader
-- Footer with final-call CTA and massive outline brand text
-- Noise/grain overlay, hero grid glow, acid-green accent system
-- All 15 buy links verified to correct Freename URLs (HTTP 200)
-- Live pricing scraped from each Freename discover page — "From $X.XX" shown per card (2026-08-26)
-- Chain filter bar (All / Polygon / Solana), sticky, with live match count
-- Copy referral link button per card (clipboard + toast)
-- Bulk offer lead form (modal) → POST /api/leads stored in MongoDB (2026-08-26, later removed per user request)
-- Price auto-refresh: backend polls Freename v2 API every 6h, caches in Mongo, serves /api/prices; frontend live-overrides card prices (2026-08-26)
-- Category editorial images with parallax + spotlight frames (2026-08-26)
-- "What exactly are you buying?" education section: TLD/SLD ownership model, 6 real-life utility cards, 3-step strip (2026-08-26)
-- Per-card: custom artwork (8 AI-generated via Gemini Nano Banana, 7 curated stock pending LLM budget top-up), example names (mike.cashtransfer style), 3 plain-English utilities, MINTED ON POLYGON/SOLANA badges
-- Whole card clickable → purchase URL; card name hover accent; shine + lift effects on all buttons
-- Nav branding upgrade: live pulse pill, Browse Names + Freename CTAs; animated hero (panning grid, 3 drifting glow orbs)
-- "Type your name" claim section: live Freename price-check API (/api/name-preview) across all 15 endings, personalized greeting, gradient glow input, staggered result cards linking to exact buy URLs (2026-08-26)
-- Social share row per card (X / Telegram / WhatsApp intent links with prefilled promo text) + copy referral button (2026-08-26)
-- 3D tilt on domain cards (spring physics), aurora background layer (acid + cyan drifting glows), gradient price text, OG/Twitter meta tags for premium link previews (2026-08-26)
+## Implemented (this session, 2026-08-26)
+- Hero background video loop (stock clip self-hosted; Sora 2 AI clip BLOCKED — Universal Key budget insufficient)
+- aiwebtools.app branding: nav logo, "Free AI Tools" chip (desktop+mobile menu), footer wordmark + presented-by, .aiwebtools card example chips + "Live proof" link — all open aiwebtools.app in new tab
+- All external links open in NEW tab (target=_blank + noopener); Freename URLs carry ref=olive-ears-obey, quote-mark (%22) bug fixed
+- Live name search rebuilt: NDJSON streaming `/api/name-preview-stream` (first price ~6s, 15/15 in ~20s fresh, instant cached 10-min TTL), retry + semaphore(4) + 40s hang guard; "· · ·" placeholder instead of stale seed prices
+- Clickable TLD filter chips ABOVE the search bar (tiny on desktop, 40px tap targets on mobile)
+- Default view: 8 curated premium example names per TLD with real live prices (per-TLD keyword sets, e.g. oil.worldtrade $4,999); sold names show struck-through "No longer available"; refreshed every 30 min
+- "Make Your Own TLD" buttons (nav desktop, mobile menu, hero, footer) → https://freename.com/home?ref=olive-ears-obey
+- Mobile optimization: hamburger nav, 360px horizontal overflow fixed (html overflow-x), footer wordmark scales, chips tap-friendly
+- Domain card action row: share/copy icons row + full-width Buy button (overflow fixed)
+- Testing: /app/test_reports/iteration_1.json, iteration_2.json; backend pytest suite /app/backend/tests/backend_test.py (14/14 pass)
+- Deployment readiness: PASS (deployment_agent, 2026-08-26). User presses Deploy in dashboard.
 
 ## Backlog
-- P0: Regenerate 7 remaining custom card images once user tops up Universal Key (Profile → Manage plan → Universal Key → Add Balance): ai-tools, aimainframe, aitoolscompany, robotsales, robotstore, worldpeace, worldtrade
-- P1: Email notification to owner when a lead arrives (Resend); admin view of leads
-- P2: Bundle deals section, per-domain OG images, availability webhook
+- P1: Generate Sora 2 hero loop when Universal Key budget is topped up (script ready: /app/backend/scripts/gen_hero_video.py, outputs /videos/hero-ai.mp4; re-add <source> in Hero.jsx)
+- P2: Refactor ClaimYourName.jsx (extract stream hook + grids); centralize buy-URL builder
+- P2: Consider WebM/VP9 hero video variant for broader codec support
 
-## Next Tasks
-1. Regenerate remaining 7 custom images after budget top-up
-2. Wire lead notifications to owner email (Resend integration)
-3. Per-domain dynamic OG images for richer social shares
+## Notes
+- No auth anywhere; /app/memory/test_credentials.md intentionally empty
+- Preview URL may show "Preview Unavailable" after inactivity — curl the URL once to wake

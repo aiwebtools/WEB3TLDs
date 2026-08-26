@@ -30,11 +30,18 @@ export const Hero = () => {
       className="relative min-h-screen flex flex-col justify-end overflow-hidden"
     >
       <motion.div style={{ y: yBg }} className="absolute inset-0 -z-10">
-        <img
-          src="https://images.unsplash.com/photo-1714548529197-537c1f0b6aa7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwzfHxkYXJrJTIwZnV0dXJpc3RpYyUyMGFic3RyYWN0JTIwbmV0d29ya3xlbnwwfHx8fDE3ODc3MDc1MDl8MA&ixlib=rb-4.1.0&q=85"
-          alt=""
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="https://images.unsplash.com/photo-1714548529197-537c1f0b6aa7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwzfHxkYXJrJTIwZnV0dXJpc3RpYyUyMGFic3RyYWN0JTIwbmV0d29ya3xlbnwwfHx8fDE3ODc3MDc1MDl8MA&ixlib=rb-4.1.0&q=85"
           className="w-full h-[130%] object-cover opacity-40"
-        />
+          data-testid="hero-background-video"
+        >
+          <source src="/videos/hero-stock.mp4" type="video/mp4" />
+        </video>
         <div className="absolute inset-0 bg-black/70" />
         <div className="absolute inset-0 hero-grid-bg" />
         <div className="absolute -top-40 left-1/4 w-[600px] h-[600px] rounded-full bg-[#CCFF00]/[0.07] blur-[140px] orb-float-1" />
@@ -76,17 +83,31 @@ export const Hero = () => {
             Fifteen top-level domains across money transfer, AI, robotics and global trade.
             Minted on Polygon and Solana. One click takes you straight to checkout on Freename.
           </motion.p>
-          <motion.a
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 1.05 }}
-            href="#chapter-01"
-            data-testid="hero-cta-button"
-            className="btn-acid inline-flex items-center gap-3 bg-[#CCFF00] text-[#050505] font-mono2 text-sm tracking-[0.15em] uppercase px-8 py-4 w-fit"
+            className="flex flex-wrap items-center gap-4"
           >
-            Browse Domains
-            <ArrowDownRight className="w-4 h-4" strokeWidth={2} />
-          </motion.a>
+            <a
+              href="#chapter-01"
+              data-testid="hero-cta-button"
+              className="btn-acid inline-flex items-center gap-3 bg-[#CCFF00] text-[#050505] font-mono2 text-sm tracking-[0.15em] uppercase px-8 py-4 w-fit"
+            >
+              Browse Domains
+              <ArrowDownRight className="w-4 h-4" strokeWidth={2} />
+            </a>
+            <a
+              href="https://freename.com/home?ref=olive-ears-obey"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="hero-make-tld-button"
+              className="inline-flex items-center gap-3 border border-[#CCFF00]/40 text-[#CCFF00] hover:bg-[#CCFF00]/10 font-mono2 text-sm tracking-[0.15em] uppercase px-8 py-4 w-fit transition-colors"
+            >
+              Make Your Own TLD
+              <ArrowDownRight className="w-4 h-4 -rotate-90" strokeWidth={2} />
+            </a>
+          </motion.div>
         </div>
 
         <motion.div

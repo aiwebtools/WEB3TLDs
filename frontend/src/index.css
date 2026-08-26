@@ -40,6 +40,9 @@
   .lenis.lenis-smooth {
     scroll-behavior: auto !important;
   }
+  html {
+    overflow-x: hidden;
+  }
   body {
     @apply bg-[#050505] text-white antialiased;
     font-family: "Outfit", sans-serif;

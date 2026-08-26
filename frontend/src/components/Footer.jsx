@@ -32,29 +32,50 @@ export const Footer = () => {
               Start with .transfermoney
               <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
             </a>
+            <a
+              href="https://freename.com/home?ref=olive-ears-obey"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="footer-make-tld-button"
+              className="inline-flex items-center gap-3 border border-[#CCFF00]/40 text-[#CCFF00] hover:bg-[#CCFF00]/10 font-mono2 text-sm tracking-[0.15em] uppercase px-8 py-4 transition-colors"
+            >
+              Make Your Own TLD
+              <ArrowUpRight className="w-4 h-4" strokeWidth={2} />
+            </a>
           </div>
         </motion.div>
 
         <div className="mt-24 md:mt-32">
           <div className="overflow-hidden">
-            <motion.div
+            <motion.a
+              href="https://aiwebtools.app"
+              target="_blank"
+              rel="noopener noreferrer"
               initial={{ y: "60%", opacity: 0 }}
               whileInView={{ y: 0, opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display font-black uppercase tracking-tighter text-outline text-[16vw] leading-none text-center select-none whitespace-nowrap"
+              className="block font-display font-black uppercase tracking-tighter text-outline text-[11vw] sm:text-[13vw] lg:text-[16vw] leading-none text-center select-none whitespace-nowrap hover:opacity-80 transition-opacity"
               data-testid="footer-brand-text"
+              title="aiwebtools.app — free AI tools"
             >
               AIWEBTOOLS
-            </motion.div>
+            </motion.a>
           </div>
           <div className="mt-10 pt-6 border-t border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <a
+              href="https://aiwebtools.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="footer-presented-by"
+              className="flex items-center gap-3 group"
+              title="Visit aiwebtools.app for free AI tools"
+            >
               <Hexagon className="w-4 h-4 text-[#CCFF00]" strokeWidth={1.5} />
-              <span className="font-mono2 text-xs tracking-[0.25em] uppercase text-white/60" data-testid="footer-presented-by">
-                Presented by AIWEBTOOLS.AI
+              <span className="font-mono2 text-xs tracking-[0.25em] uppercase text-white/60 group-hover:text-[#CCFF00] transition-colors">
+                Presented by AIWEBTOOLS.AI — free AI tools at aiwebtools.app
               </span>
-            </div>
+            </a>
             <p className="font-mono2 text-[11px] tracking-[0.15em] uppercase text-white/30">
               All purchases secured via Freename.io — Polygon & Solana
             </p>

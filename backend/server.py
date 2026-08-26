@@ -1,8 +1,10 @@
 from fastapi import FastAPI, APIRouter
+from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import json
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
@@ -108,7 +110,12 @@ TLD_SLUGS = [
     "robotsales", "robotshop", "robotstore",
     "worldpeace", "worldtrade", "worldtrader",
 ]
-PRICE_REFRESH_INTERVAL = 6 * 60 * 60
+PRICE_REFRESH_INTERVAL = 30 * 60
+
+# In-memory cache for name lookups: name -> (epoch_seconds, results)
+NAME_PREVIEW_CACHE = {}
+NAME_PREVIEW_TTL = 10 * 60
+HTTP_TIMEOUT = 10
 
 def collect_prices(node, out, suffix):
     if isinstance(node, dict):
@@ -127,31 +134,95 @@ def collect_prices(node, out, suffix):
         for item in node:
             collect_prices(item, out, suffix)
 
-async def fetch_tld_price(slug: str):
+async def fetch_tld_price(http, sem, slug: str):
     try:
-        async with httpx.AsyncClient(timeout=20) as http:
-            r = await http.get(f"https://v2-api.freename.com/api/v2/reseller/search/{slug}?searchString=")
-            result = r.json().get("data", {}).get("result", {})
+        async with sem:
+            r = await http.get(f"{FREENAME_RESELLER_SEARCH}/{slug}?searchString=")
+        result = r.json().get("data", {}).get("result", {})
         prices = []
         collect_prices(result, prices, f".{slug}")
         return min(prices) if prices else None
     except Exception as e:
-        logger.warning(f"price fetch failed for {slug}: {e}")
+        logger.warning(f"price fetch failed for {slug}: {e!r}")
         return None
+
+
+EXAMPLE_KEYWORDS = {
+    "transfermoney": ["remit", "wire", "sendcash", "oil", "gold", "bank", "pay", "crypto", "global", "swift"],
+    "transfercoin": ["bitcoin", "eth", "swap", "oil", "gold", "bank", "pay", "crypto", "defi", "whale"],
+    "cointransfer": ["bitcoin", "eth", "defi", "oil", "gold", "bank", "pay", "crypto", "exchange", "whale"],
+    "transfercash": ["atm", "instant", "oil", "gold", "bank", "pay", "crypto", "remit", "payday", "swift"],
+    "cashtransfer": ["remit", "instant", "oil", "gold", "bank", "pay", "crypto", "family", "global", "atm"],
+    "ai-tools": ["gpt", "image", "writer", "oil", "gold", "code", "video", "voice", "agent", "chat"],
+    "aiwebtools": ["studio", "builder", "oil", "gold", "gpt", "image", "video", "seo", "agent", "launch"],
+    "aimainframe": ["compute", "gpu", "oil", "gold", "core", "cloud", "data", "neural", "quantum", "node"],
+    "aitoolscompany": ["labs", "hq", "oil", "gold", "pro", "studio", "works", "group", "ventures", "corp"],
+    "robotsales": ["humanoid", "android", "oil", "gold", "drone", "bot", "mech", "cyborg", "factory", "pro"],
+    "robotshop": ["humanoid", "toys", "oil", "gold", "drone", "pet", "home", "android", "kids", "pro"],
+    "robotstore": ["parts", "droids", "oil", "gold", "drone", "android", "kits", "mega", "humanoid", "pro"],
+    "worldpeace": ["hope", "unite", "oil", "gold", "give", "love", "earth", "global", "charity", "one"],
+    "worldtrade": ["oil", "gas", "gold", "cargo", "shipping", "forex", "export", "import", "grain", "steel"],
+    "worldtrader": ["forex", "whale", "oil", "gold", "pro", "fx", "bull", "elite", "crypto", "prime"],
+}
+
+
+async def fetch_tld_examples(http, sem, slug: str):
+    keywords = EXAMPLE_KEYWORDS.get(slug, [])
+    found = {}
+
+    async def probe(kw):
+        fqdn = f"{kw}.{slug}"
+        for attempt in range(2):
+            try:
+                async with sem:
+                    r = await http.get(f"{FREENAME_RESELLER_SEARCH}/{slug}?searchString={kw}")
+                hit = extract_exact(r.json().get("data", {}).get("result", {}), fqdn)
+                status = hit.get("status")
+                if status:
+                    found[fqdn] = {
+                        "name": fqdn,
+                        "price": float(hit["price"]) if hit.get("price") else None,
+                        "status": status,
+                        "buyUrl": buy_url_for(fqdn),
+                    }
+                return
+            except Exception as e:
+                if attempt == 1:
+                    logger.warning(f"example fetch failed for {fqdn}: {e!r}")
+                else:
+                    await asyncio.sleep(1.5)
+
+    await asyncio.gather(*[probe(kw) for kw in keywords])
+    available = sorted(
+        (e for e in found.values() if e["status"] == "AVAILABLE" and e["price"] is not None),
+        key=lambda e: -e["price"],
+    )
+    sold = [e for e in found.values() if e["status"] != "AVAILABLE"]
+    return (available + sold)[:8]
+
 
 async def refresh_prices():
     prices = {}
-    for slug in TLD_SLUGS:
-        price = await fetch_tld_price(slug)
+    examples = {}
+    async with httpx.AsyncClient(timeout=25) as http:
+        sem = asyncio.Semaphore(4)
+
+        async def one(slug):
+            return slug, await fetch_tld_price(http, sem, slug), await fetch_tld_examples(http, sem, slug)
+
+        results = await asyncio.gather(*[one(slug) for slug in TLD_SLUGS])
+    for slug, price, ex in results:
         if price is not None:
             prices[slug] = price
-    if prices:
+        if ex:
+            examples[slug] = ex
+    if prices or examples:
         await db.tld_prices.update_one(
             {"_id": "current"},
-            {"$set": {"prices": prices, "updated_at": datetime.now(timezone.utc).isoformat()}},
+            {"$set": {"prices": prices, "examples": examples, "updated_at": datetime.now(timezone.utc).isoformat()}},
             upsert=True,
         )
-        logger.info(f"refreshed prices for {len(prices)} TLDs")
+        logger.info(f"refreshed prices for {len(prices)} TLDs, examples for {len(examples)}")
 
 async def price_refresh_loop():
     while True:
@@ -167,44 +238,115 @@ async def get_prices():
     doc = await db.tld_prices.find_one({"_id": "current"}, {"_id": 0})
     return doc or {"prices": {}, "updated_at": None}
 
+FREENAME_RESELLER_SEARCH = "https://v2-api.freename.com/api/v2/reseller/search"
+
+
+def buy_url_for(fqdn: str) -> str:
+    return f"https://freename.io/results?search={fqdn}&ref=olive-ears-obey"
+
+
+def extract_exact(result, fqdn):
+    found = {}
+
+    def walk(node):
+        if isinstance(node, dict):
+            if node.get("name") == fqdn:
+                found["price"] = (node.get("price") or {}).get("amount")
+                found["status"] = node.get("availabilityStatus")
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for item in node:
+                walk(item)
+
+    walk(result)
+    return found
+
+
+async def check_name_on_tld(http, sem, clean, slug):
+    fqdn = f"{clean}.{slug}"
+    found = {}
+    for attempt in range(3):
+        try:
+            async with sem:
+                r = await http.get(f"{FREENAME_RESELLER_SEARCH}/{slug}?searchString={clean}")
+            found = extract_exact(r.json().get("data", {}).get("result", {}), fqdn)
+            break
+        except Exception as e:
+            if attempt == 2:
+                logger.warning(f"name preview failed for {fqdn}: {e!r}")
+            else:
+                await asyncio.sleep(1.5 * (attempt + 1))
+    return {
+        "slug": slug,
+        "fqdn": fqdn,
+        "price": found.get("price"),
+        "status": found.get("status", "UNKNOWN"),
+        "buyUrl": buy_url_for(fqdn),
+    }
+
+
 @api_router.get("/name-preview")
 async def name_preview(name: str):
     clean = "".join(c for c in name.lower() if c.isalnum() or c == "-").strip("-")[:30]
     if not clean:
         return {"name": "", "results": []}
 
-    async def check(slug):
-        fqdn = f"{clean}.{slug}"
-        found = {}
-        try:
-            async with httpx.AsyncClient(timeout=20) as http:
-                r = await http.get(f"https://v2-api.freename.com/api/v2/reseller/search/{slug}?searchString={clean}")
-                result = r.json().get("data", {}).get("result", {})
+    now = datetime.now(timezone.utc).timestamp()
+    cached = NAME_PREVIEW_CACHE.get(clean)
+    if cached and now - cached[0] < NAME_PREVIEW_TTL:
+        return {"name": clean, "results": cached[1]}
 
-            def walk(node):
-                if isinstance(node, dict):
-                    if node.get("name") == fqdn:
-                        found["price"] = (node.get("price") or {}).get("amount")
-                        found["status"] = node.get("availabilityStatus")
-                    for v in node.values():
-                        walk(v)
-                elif isinstance(node, list):
-                    for item in node:
-                        walk(item)
+    async with httpx.AsyncClient(timeout=25) as http:
+        sem = asyncio.Semaphore(4)
+        results = list(await asyncio.gather(*[check_name_on_tld(http, sem, clean, slug) for slug in TLD_SLUGS]))
 
-            walk(result)
-        except Exception as e:
-            logger.warning(f"name preview failed for {fqdn}: {e}")
-        return {
-            "slug": slug,
-            "fqdn": fqdn,
-            "price": found.get("price"),
-            "status": found.get("status", "UNKNOWN"),
-            "buyUrl": f"https://freename.io/results?search=%22{fqdn}%22&ref=olive-ears-obey",
-        }
+    NAME_PREVIEW_CACHE[clean] = (now, results)
+    if len(NAME_PREVIEW_CACHE) > 500:
+        NAME_PREVIEW_CACHE.clear()
+    return {"name": clean, "results": results}
 
-    results = await asyncio.gather(*[check(slug) for slug in TLD_SLUGS])
-    return {"name": clean, "results": list(results)}
+
+@api_router.get("/name-preview-stream")
+async def name_preview_stream(name: str):
+    clean = "".join(c for c in name.lower() if c.isalnum() or c == "-").strip("-")[:30]
+
+    async def gen():
+        if not clean:
+            return
+        now = datetime.now(timezone.utc).timestamp()
+        cached = NAME_PREVIEW_CACHE.get(clean)
+        if cached and now - cached[0] < NAME_PREVIEW_TTL:
+            for r in cached[1]:
+                yield json.dumps(r) + "\n"
+            return
+
+        queue = asyncio.Queue()
+        async with httpx.AsyncClient(timeout=25) as http:
+            sem = asyncio.Semaphore(4)
+
+            async def run(slug):
+                res = await check_name_on_tld(http, sem, clean, slug)
+                await queue.put(res)
+
+            tasks = [asyncio.create_task(run(slug)) for slug in TLD_SLUGS]
+            collected = []
+            for _ in TLD_SLUGS:
+                try:
+                    res = await asyncio.wait_for(queue.get(), timeout=40)
+                except asyncio.TimeoutError:
+                    logger.warning("name-preview-stream: timed out waiting for a worker result")
+                    break
+                collected.append(res)
+                yield json.dumps(res) + "\n"
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+        collected.sort(key=lambda r: TLD_SLUGS.index(r["slug"]))
+        NAME_PREVIEW_CACHE[clean] = (now, collected)
+        if len(NAME_PREVIEW_CACHE) > 500:
+            NAME_PREVIEW_CACHE.clear()
+
+    return StreamingResponse(gen(), media_type="application/x-ndjson")
 
 # Include the router in the main app
 app.include_router(api_router)

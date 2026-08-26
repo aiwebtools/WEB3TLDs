@@ -1,0 +1,46 @@
+{
+  "summary": "Full backend + frontend verification of the Web3 TLD showcase. Backend: 14/14 pytest cases pass (/api/, /api/prices with 15 TLD prices + 8 examples each, /api/name-preview, /api/name-preview-stream NDJSON with fresh + cached timing, /api/leads, /api/status). Frontend (Playwright, 1920x1080 and 390x844): search bug fix verified (15 TLDs returned, all buyUrls clean with no %22/quotes, all target=_blank), streaming speed verified (first live-resolved card 6.2s, all 15 in 20.4s for a brand-new uncached name), TLD filter chips confirmed above input and functional (16 chips), default examples view shows 15 cards x 8 priced rows (120 valid freename links, e.g. oil.worldtrade $4,999), aiwebtools.app branding correct in nav/footer/domain card, domain card click opens https://freename.io/discover/transfermoney?ref=olive-ears-obey in a new tab, mobile has no horizontal overflow. Two real UI defects found (buy-button label overflow, no mobile nav) plus items that could not be verified in the headless environment (H.264 video playback, sold/struck-through example rows).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/name-preview-stream", "issue": "Generator awaits exactly len(TLD_SLUGS) queue items; if any worker task were cancelled/killed before queue.put the response would hang until client timeout. check_name_on_tld currently swallows all exceptions so it is not reproducible today, but add a timeout/sentinel guard."},
+      {"endpoint": "/api/prices", "issue": "fetch_tld_examples uses the same 10 hard-coded keywords for every TLD, so all 15 example cards show the identical name list (oil/ai/pay/trade/crypto/robot/gold/bank) with identical prices - looks templated rather than curated."},
+      {"endpoint": "GET /videos/hero-ai.mp4", "issue": "Missing video returns HTTP 200 with index.html (SPA catch-all) instead of 404. Browsers reject it on MIME sniff so the /videos/hero-stock.mp4 fallback still wins, but relying on a 200+HTML response for source fallback is fragile; better to remove the hero-ai source until the file exists."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "DomainCard buy button", "issue": "In the 5-column desktop grid (chapter-01 at 1920px) the 'Buy on Freename' label overflows its yellow button box (scrollWidth 90 vs clientWidth 72) and visibly spills past the button/card edge. Buy button is squeezed by the 3 share icons + copy button in the same flex row.", "selector": "[data-testid=\"buy-button-transfermoney\"]", "priority": "MEDIUM"},
+      {"component": "Nav (mobile)", "issue": "At 390px all nav links are hidden (md:flex / sm:inline-flex) - nav-link-free-ai-tools, nav-browse-button and all chapter links are invisible and there is no hamburger menu, so the required 'Free AI Tools' chip is unreachable on mobile.", "selector": "[data-testid=\"nav-link-free-ai-tools\"]", "priority": "MEDIUM"},
+      {"component": "DomainCard (framer-motion 3D tilt)", "issue": "Clicking the upper image area of the card (y~40px) is intercepted by the parent grid container because of the rotateX/rotateY transformPerspective hit-box offset (Playwright: 'grid ... intercepts pointer events'). Clicks on the card body/title work and open the correct new tab, so impact is limited to the top strip of the card.", "selector": "[data-testid=\"domain-card-transfermoney\"]", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Live name search", "issue": "While the stream is in flight each card shows the seeded FROM_PRICES value (e.g. $9.98) which then jumps to the real live price (e.g. $29.98) once resolved - users can read a wrong price for up to ~20s. Consider showing a skeleton/'checking...' instead of a stale seed price.", "affected_selectors": ["[data-testid^=\"claim-price-\"]"]}
+    ],
+    "design_issues": [
+      {"screen": "Default examples grid", "issues": ["All 15 TLD cards list the same 8 keywords with the same prices, making the section feel duplicated"]},
+      {"screen": "Domain cards", "issues": ["Meta text at text-white/30-35 ('Minted on ...', 'once, forever - tap card to buy') is very low contrast on #050505", "The 'From $9.98 - once, forever - tap card to buy' line wraps onto 2-3 lines in narrow 5-column cards"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/backend_test.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Fix 'Buy on Freename' button label overflow in the 5-column desktop card grid (shrink text / allow wrap / give the button min-width and move share icons to their own row).",
+    "Add a mobile nav (hamburger or visible chip) so the 'Free AI Tools' aiwebtools.app link and chapter links are reachable below 768px.",
+    "Avoid showing seeded FROM_PRICES as the price while the live stream is still resolving (price flickers 9.98 -> 29.98).",
+    "Optionally drop the /videos/hero-ai.mp4 <source> until the file exists (SPA returns 200/HTML for it) and diversify example keywords per TLD."
+  ],
+  "critical_code_review_comments": [
+    "name_preview_stream: guard the consumer loop with asyncio.wait_for / sentinel so a dead worker cannot hang the NDJSON response forever.",
+    "ClaimYourName.jsx (290 lines) mixes streaming logic, filter chips, examples grid and results grid - extract the stream hook and the two grids into separate modules for maintainability.",
+    "Duplicate buy-URL construction: buyFor() in ClaimYourName.jsx duplicates backend buy_url_for()/data/domains.js buyUrl() - centralize to avoid the quoting regression reappearing.",
+    "fetch_tld_examples loops 10 keywords x 15 TLDs sequentially per slug on every 30-min refresh (150+ upstream calls); consider gathering keywords concurrently under the existing semaphore."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (14/14)", "frontend": "~90% (all requested flows pass except mobile nav visibility + buy-button overflow; hero video playback and sold-row rendering unverifiable in this environment)"},
+  "seed_data_creation": "One TEST_qa_lead lead and one TEST_qa status check inserted via public API during tests (harmless, no delete endpoint exists).",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "None needed; /app/memory/test_credentials.md is empty (app has no auth).",
+  "context_for_next_testing_agent": "Backend regression suite lives at /app/backend/tests/backend_test.py (run: cd /app/backend && python -m pytest tests/backend_test.py -v). Verified live: 120 example rows all use https://freename.io/results?search=<fqdn>&ref=olive-ears-obey with target=_blank and no %22; fresh-name stream timing 6.2s first / 20.4s complete; cached stream <1s. NOT verifiable here: (a) hero video playback - Playwright's headless Chromium returns canPlayType('video/mp4; codecs=avc1') = '' so H.264 (hero-stock.mp4 is avc1) never decodes; currentSrc DOES correctly resolve to /videos/hero-stock.mp4 and no media error is raised, so the fallback chain works - re-verify in a Chrome with proprietary codecs or convert a copy to VP9/WebM for testability; (b) example-sold-* struck-through rows - Freename currently returns AVAILABLE for every example, so 0 sold rows exist; code path in ClaimYourName.jsx lines 185-198 looks correct but is untested at runtime.",
+  "rca_of_the_issue": "Buy-button overflow: DomainCard's action row puts 3 share anchors + copy button + a flex-1 buy anchor in one row; at xl:grid-cols-5 the card is only ~281px wide, leaving ~72px for a two-word uppercase label with tracking-[0.15em], so the text (90px intrinsic) escapes the button box. Card-click interception: the article uses framer-motion rotateX/rotateY with transformPerspective 900, which offsets the browser hit-box from the painted box near the card top edge, so elementFromPoint there resolves to the parent grid."
+}
