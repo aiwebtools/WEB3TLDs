@@ -5,6 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import json
+import re
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
@@ -238,6 +239,7 @@ async def price_refresh_loop():
 @app.on_event("startup")
 async def start_price_refresh():
     asyncio.create_task(price_refresh_loop())
+    asyncio.create_task(promo_refresh_loop())
 
 @api_router.get("/prices")
 async def get_prices():
@@ -353,6 +355,81 @@ async def name_preview_stream(name: str):
             NAME_PREVIEW_CACHE.clear()
 
     return StreamingResponse(gen(), media_type="application/x-ndjson")
+
+# ---------------- Promo code (scraped from Freename public pages) ----------------
+
+PROMO_SEED = {
+    "code": "AUGUST50",
+    "title": "August Deal",
+    "description": "50% off all Web3 assets. Minimum spend $300.",
+    "source": "freename.com",
+}
+
+PROMO_SOURCES = [
+    "https://freename.com",
+    "https://freename.io",
+    "https://freename.com/blog",
+]
+
+CODE_PATTERNS = [
+    # "Use code AUGUST50 for 50% off all Web3 assets"
+    re.compile(r"use\s+code\s+[\"']?([A-Z0-9]{4,15})[\"']?\s+for\s+(\d{1,2})\s*%\s*off([^<.]{0,80})", re.I),
+    re.compile(r"code\s+[\"']?([A-Z0-9]{4,15})[\"']?\s*(?:for|[-–—])\s*(\d{1,2})\s*%\s*off([^<.]{0,80})", re.I),
+]
+
+
+async def scrape_promo():
+    """Try to find the current promo code on Freename public pages.
+    Returns dict or None. Codes injected purely by JS A/B tests won't be
+    visible in static HTML; in that case the last known promo stays live."""
+    async with httpx.AsyncClient(timeout=20, follow_redirects=True,
+                                 headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36"}) as http:
+        for url in PROMO_SOURCES:
+            try:
+                r = await http.get(url)
+                text = re.sub(r"<[^>]+>", " ", r.text)
+                text = re.sub(r"\s+", " ", text)
+                for pat in CODE_PATTERNS:
+                    m = pat.search(text)
+                    if m:
+                        code, pct, rest = m.group(1).upper(), m.group(2), m.group(3).strip(" .")
+                        return {
+                            "code": code,
+                            "title": "Freename Deal",
+                            "description": f"{pct}% off{(' ' + rest) if rest else ' all Web3 assets'}",
+                            "source": url,
+                        }
+            except Exception as e:
+                logger.warning(f"promo scrape failed for {url}: {e!r}")
+    return None
+
+
+async def refresh_promo():
+    found = await scrape_promo()
+    update = {"verified_at": datetime.now(timezone.utc).isoformat()}
+    if found:
+        update.update(found)
+    existing = await db.promo.find_one({"_id": "current"})
+    if not existing:
+        update = {**PROMO_SEED, **update}
+    await db.promo.update_one({"_id": "current"}, {"$set": update}, upsert=True)
+    logger.info(f"promo refreshed: {(update.get('code'))}")
+
+
+async def promo_refresh_loop():
+    while True:
+        try:
+            await refresh_promo()
+        except Exception as e:
+            logger.warning(f"promo refresh failed: {e!r}")
+        await asyncio.sleep(6 * 60 * 60)
+
+
+@api_router.get("/promo")
+async def get_promo():
+    doc = await db.promo.find_one({"_id": "current"}, {"_id": 0})
+    return doc or {**PROMO_SEED, "verified_at": None}
+
 
 @api_router.get("/share/{slug}", response_class=HTMLResponse)
 async def share_page(slug: str, request: Request):

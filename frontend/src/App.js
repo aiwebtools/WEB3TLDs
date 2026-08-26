@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Lenis from "@studio-freight/lenis";
 import { Toaster } from "./components/ui/sonner";
 import { Nav } from "./components/Nav";
+import { PromoBanner } from "./components/PromoBanner";
 import { Hero } from "./components/Hero";
 import { Marquee } from "./components/Marquee";
 import { HowItWorks } from "./components/HowItWorks";
@@ -63,6 +64,7 @@ function App() {
       <div className="aurora-bg" />
       <Nav />
       <main className="relative z-10">
+        <PromoBanner />
         <Hero />
         <Marquee />
         <HowItWorks />

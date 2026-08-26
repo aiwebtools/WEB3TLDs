@@ -10,6 +10,7 @@ Showcase/sell 15 premium Web3 TLDs (.transfermoney, .transfercoin, .cointransfer
 - Media: `/app/frontend/public/images/domains/*.png` (15 AI-generated card images), `/app/frontend/public/videos/hero-stock.mp4` (hero bg loop)
 
 ## Implemented (this session, 2026-08-26)
+- Promo banner: `GET /api/promo` serves current Freename promo (seeded AUGUST50 — 50% off $300+, verified live 2026-08-26); backend scraper re-checks Freename public pages every 6h and auto-updates the code when a new one appears (JS-injected codes aren't statically scrapeable — banner keeps last verified code, marked with verified_at); frontend `PromoBanner.jsx` strip under nav with copy-to-clipboard (+ fallback), chime + confetti
 - Share Image Cards: 15 branded 1200x630 OG cards auto-generated with Pillow (`/app/backend/scripts/og_images.py` -> `/app/frontend/public/og/{slug}.png`), regenerated every 30 min with live prices; `GET /api/share/{slug}` serves OG/Twitter meta (absolute image URLs via x-forwarded-host) and redirects humans to Freename purchase; DomainCard share/copy buttons now share the branded page URL
 - Purchase celebration: confetti burst (canvas-confetti, acid-green palette) + WebAudio "bing" chime, then the Freename tab opens ~650ms later (about:blank trick = popup-blocker safe) on domain cards, buy buttons, search result cards and example rows
 - Search glitch fix: 2-char minimum, 600ms debounce, previous results stay dimmed until new stream data arrives — no flicker/reset while typing
