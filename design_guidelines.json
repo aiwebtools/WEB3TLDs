@@ -1,0 +1,161 @@
+{
+  "theme": "dark",
+  "archetype": "ARCHETYPE 7: ELECTRIC & NEON",
+  "typography": {
+    "fonts": [
+      {
+        "name": "Unbounded",
+        "type": "heading",
+        "import_url": "https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;700;900&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap",
+        "usage": "Primary headings, kinetic typography, section titles, huge typographic elements. Use with tracking-tighter."
+      },
+      {
+        "name": "Outfit",
+        "type": "body",
+        "usage": "Main body text, descriptions, general UI text."
+      },
+      {
+        "name": "JetBrains Mono",
+        "type": "accent",
+        "usage": "Badges, domain names, links, chapter numbers, technical data."
+      }
+    ],
+    "hierarchy": {
+      "h1": "text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter uppercase",
+      "h2": "text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight uppercase",
+      "h3": "text-2xl sm:text-3xl font-bold tracking-tight",
+      "body": "text-base md:text-lg text-gray-400 font-light leading-relaxed",
+      "accent": "text-sm tracking-[0.2em] uppercase font-mono text-[#CCFF00]"
+    }
+  },
+  "colors": {
+    "background": "#050505",
+    "surface": "#0A0A0A",
+    "surface_glass": "rgba(255, 255, 255, 0.02)",
+    "accent_primary": "#CCFF00",
+    "accent_hover": "#E0FF66",
+    "text_primary": "#FFFFFF",
+    "text_secondary": "#888888",
+    "border_subtle": "rgba(255, 255, 255, 0.1)",
+    "neon_glow": "drop-shadow-[0_0_15px_rgba(204,255,0,0.4)]"
+  },
+  "visual_enhancers": {
+    "surfaces": {
+      "cards": "bg-white/[0.02] backdrop-blur-md border border-white/10 hover:border-[#CCFF00]/50 transition-colors duration-300",
+      "hero_overlay": "bg-black/70",
+      "glass_nav": "bg-[#050505]/80 backdrop-blur-xl border-b border-white/10"
+    },
+    "textures": [
+      "Grain/noise overlay on the entire page body (using fixed mix-blend-overlay with an SVG noise pattern or CSS).",
+      "Subtle glowing radial gradients behind major sections."
+    ]
+  },
+  "motion": {
+    "libraries": ["framer-motion", "lucide-react", "react-fast-marquee", "@studio-freight/lenis"],
+    "instructions": [
+      "Implement smooth scrolling using Lenis.",
+      "Hero Kinetic Typography: Use Framer Motion for line-by-line masked reveal. Text should rise up from a hidden overflow container.",
+      "Hover states on domain cards: Gentle -translate-y-1, glow effect on the border.",
+      "Marquee: Very slow editorial drift using react-fast-marquee. Text: 'PRESENTED BY AIWEBTOOLS.AI • PREMIUM WEB3 DOMAINS •' etc.",
+      "Staggered entrance animations for domain cards within a category."
+    ]
+  },
+  "layouts": {
+    "grid_system": "The Bento/Tetris Grid Protocol. Wide gap-8 to gap-12. Generous padding like py-24 or py-32 for sections.",
+    "domain_cards": "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6",
+    "alignment": "Strict left-aligned text for sophisticated editorial feel. Do not center everything."
+  },
+  "components": {
+    "hero": "Huge kinetic H1. Dark atmospheric background. Clear Call to Action.",
+    "category_section": "Numbered chapters (e.g., '01 // MONEY TRANSFER'). High contrast separator lines.",
+    "domain_card": "Includes: Domain Name (JetBrains Mono), Pitch Copy, Chain Badge (Polygon/Solana), and Buy Button (direct link to freename.io with ref=olive-ears-obey).",
+    "chain_badge": "Small pill shape, monochrome or subtle tint. Polygon = purple tint, Solana = green/blue tint.",
+    "marquee": "Massive outline text or small editorial ribbon.",
+    "footer": "Presented by AIWEBTOOLS.AI. Massive brand text."
+  },
+  "data": {
+    "categories": [
+      {
+        "id": "01",
+        "title": "Money Transfer",
+        "chain": "Polygon",
+        "domains": [
+          { "name": ".transfermoney", "pitch": "The ultimate generic for global remittance." },
+          { "name": ".transfercoin", "pitch": "Bridge fiat and crypto seamlessly." },
+          { "name": ".cointransfer", "pitch": "The standard for token exchange protocols." },
+          { "name": ".transfercash", "pitch": "Instant liquidity, instantly recognized." },
+          { "name": ".cashtransfer", "pitch": "The definitive Web3 payment gateway." }
+        ]
+      },
+      {
+        "id": "02",
+        "title": "AI & Tech",
+        "chain": "Solana",
+        "domains": [
+          { "name": ".ai-tools", "pitch": "Hub for next-gen artificial intelligence utilities." },
+          { "name": ".aiwebtools", "pitch": "Your brand's home for AI-driven web apps." },
+          { "name": ".aimainframe", "pitch": "The core infrastructure for AI processing." },
+          { "name": ".aitoolscompany", "pitch": "Establish authority in the AI corporate space." }
+        ]
+      },
+      {
+        "id": "03",
+        "title": "Robotics",
+        "chain": "Polygon",
+        "domains": [
+          { "name": ".robotsales", "pitch": "The premier marketplace for automation hardware." },
+          { "name": ".robotshop", "pitch": "B2C storefront for personal robotics." },
+          { "name": ".robotstore", "pitch": "The go-to retail hub for androids & parts." }
+        ]
+      },
+      {
+        "id": "04",
+        "title": "Global",
+        "chain": "Polygon",
+        "domains": [
+          { "name": ".worldpeace", "pitch": "Unite communities with a purpose-driven TLD." },
+          { "name": ".worldtrade", "pitch": "The foundation for global decentralized commerce." },
+          { "name": ".worldtrader", "pitch": "For the elite international crypto merchant." }
+        ]
+      }
+    ],
+    "referral_url_template": "https://freename.io/discover/{domain}?ref=olive-ears-obey"
+  },
+  "media": {
+    "images": [
+      {
+        "url": "https://images.unsplash.com/photo-1714548529197-537c1f0b6aa7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwzfHxkYXJrJTIwZnV0dXJpc3RpYyUyMGFic3RyYWN0JTIwbmV0d29ya3xlbnwwfHx8fDE3ODc3MDc1MDl8MA&ixlib=rb-4.1.0&q=85",
+        "category": "hero_background",
+        "description": "Dark background with lines and shapes. Apply heavy bg-black/80 overlay."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1639322537228-f710d846310a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODl8MHwxfHNlYXJjaHwyfHxkYXJrJTIwZnV0dXJpc3RpYyUyMGFic3RyYWN0JTIwbmV0d29ya3xlbnwwfHx8fDE3ODc3MDc1MDl8MA&ixlib=rb-4.1.0&q=85",
+        "category": "section_texture",
+        "description": "Cubes/blockchain network. Use sparingly with very low opacity (mix-blend-luminosity) in category sections."
+      }
+    ]
+  },
+  "accessibility": {
+    "contrast": "Ensure text contrast against dark backgrounds. Avoid gray-on-gray.",
+    "testing": "All buttons, links, and cards must have data-testid attributes."
+  },
+  "instructions_to_main_agent": [
+    "You are building a high-end static marketing page. DO NOT use Shadcn UI cards if they restrict layout. Build custom HTML/Tailwind for maximum creative control.",
+    "Install required libraries: `yarn add framer-motion lucide-react react-fast-marquee @studio-freight/lenis`",
+    "Font Loading: Update index.html or index.css to import Unbounded, Outfit, and JetBrains Mono.",
+    "Apply `bg-[#050505] text-white font-['Outfit']` to the body.",
+    "Use framer-motion for the masked text reveal in the hero section. (Wrap lines of text in overflow-hidden divs, translate y from 100% to 0%).",
+    "Cards: Implement the Glassmorphism 'Crystal' variant. Very low opacity background, sharp 1px border. Domain names in JetBrains Mono.",
+    "The buy link MUST be: `https://freename.io/discover/{domain}?ref=olive-ears-obey`",
+    "Include the noise overlay: Create a fixed div with a tiny SVG noise pattern background, mix-blend-overlay, opacity 15%.",
+    "Do not center-align the app container. Use optical alignment and maintain asymmetric visual tension."
+  ],
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not make generic centered layouts or uniform styling.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
+    "Every interaction needs micro-animations - hover states, transitions, parallax effects, and entrance animations.",
+    "NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons. Use lucide-react.",
+    "All interactive and key informational elements MUST include a data-testid attribute to facilitate robust automated testing."
+  ]
+}
