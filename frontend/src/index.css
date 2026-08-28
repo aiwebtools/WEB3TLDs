@@ -66,8 +66,10 @@
   color: transparent;
 }
 .text-outline-acid {
-  -webkit-text-stroke: 1px rgba(204, 255, 0, 0.45);
+  -webkit-text-stroke: 2px rgba(204, 255, 0, 0.92);
   color: transparent;
+  text-shadow: 0 0 28px rgba(204, 255, 0, 0.28);
+  paint-order: stroke fill;
 }
 
 .noise-overlay {

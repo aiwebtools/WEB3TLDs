@@ -26,7 +26,7 @@ export const Nav = () => {
           target="_blank"
           rel="noopener noreferrer"
           data-testid="nav-logo"
-          className="flex items-center gap-2 sm:gap-3 group min-w-0"
+          className="flex items-center gap-2 sm:gap-3 group shrink-0"
           title="AIWEBTOOLS.AI — visit aiwebtools.app for free AI tools"
         >
           <Hexagon className="w-5 h-5 text-[#CCFF00] animate-spin-slow shrink-0" strokeWidth={1.5} />
@@ -39,14 +39,14 @@ export const Nav = () => {
             </span>
           </span>
         </a>
-        <div className="hidden lg:flex items-center gap-2 font-mono2 text-[10px] tracking-[0.25em] uppercase text-white/40" data-testid="nav-live-pill">
+        <div className="hidden 2xl:flex items-center gap-2 font-mono2 text-[10px] tracking-[0.25em] uppercase text-white/40" data-testid="nav-live-pill">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#CCFF00] opacity-60" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-[#CCFF00]" />
           </span>
-          15 Names Live — Pay Once, Own Forever
+          15 Live · Own Forever
         </div>
-        <nav className="hidden md:flex items-center gap-10">
+        <nav className="hidden md:flex items-center gap-5 lg:gap-6">
           {NAV_LINKS.map(([label, href]) => (
             <a
               key={href}
@@ -73,7 +73,7 @@ export const Nav = () => {
             target="_blank"
             rel="noopener noreferrer"
             data-testid="nav-make-tld-button"
-            className="hidden lg:inline-flex border border-[#CCFF00]/40 text-[#CCFF00] hover:bg-[#CCFF00]/10 font-mono2 text-xs tracking-[0.15em] uppercase px-4 py-2.5 transition-colors whitespace-nowrap"
+            className="hidden xl:inline-flex border border-[#CCFF00]/40 text-[#CCFF00] hover:bg-[#CCFF00]/10 font-mono2 text-xs tracking-[0.15em] uppercase px-4 py-2.5 transition-colors whitespace-nowrap shrink-0"
           >
             Make Your Own TLD
           </a>
